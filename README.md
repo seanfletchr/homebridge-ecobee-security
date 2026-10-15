@@ -1,3 +1,5 @@
+<p align="center"><img src="icon.png" alt="" width="128" height="128"></p>
+
 # homebridge-ecobee-security
 
 Shows **ecobee Smart Security** in Apple Home as a security system: arm **Stay**, arm **Away**,

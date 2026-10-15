@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Hold API: several plugins (e.g. two robot vacuums) can hold Stay at once; Away comes back only
+  when the last one releases. `/release` answers `waiting: [names]` while others still hold.
+
 ## 0.4.2
 
 - New plugin icon.

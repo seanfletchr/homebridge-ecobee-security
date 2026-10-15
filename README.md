@@ -91,10 +91,11 @@ node <plugin folder>/bin/ecobee-login.js --browser  # website sign-in
 - **Night** is only offered with `offerNight`; ecobee has no Night mode of its own.
 - After three failed reads in a row the accessory shows a fault; reads back off up to 5 minutes.
 - **Hold for other plugins:** a Unix socket at `<homebridge storage>/ecobee-security/control.sock`
-  (mode 600, homebridge user only) lets another plugin, e.g. homebridge-narwal, ask for a temporary
-  Stay: `POST /hold?by=<name>` switches Away (or arming Away) to Stay and remembers it;
-  `POST /release?by=<name>` arms Away again — unless the state was changed by anyone in between, in
-  which case the hold is just dropped. The hold survives restarts (in `state.json`). `/hold`
+  (mode 600, homebridge user only) lets another plugin, e.g. homebridge-narwal-freo, ask for a
+  temporary Stay: `POST /hold?by=<name>` switches Away (or arming Away) to Stay and remembers who
+  asked; `POST /release?by=<name>` arms Away again once **every** holder has released (with two
+  robots out, the first one back doesn't re-arm), unless the state was changed by anyone in between,
+  in which case the hold is just dropped. The hold survives restarts (in `state.json`). `/hold`
   answers `ok: false` when the alarm is triggered or the state is unknown.
 
 ## API notes

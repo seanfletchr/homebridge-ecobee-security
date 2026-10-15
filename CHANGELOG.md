@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.2
+
+- New plugin icon.
+- Declare HomeKit (HAP) support with the `supports-hap` keyword.
+
 ## 0.4.1
 
 - Plugin icon in the README.

@@ -1,7 +1,7 @@
 {
   "name": "homebridge-ecobee-security",
   "displayName": "ecobee Smart Security",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "ecobee Smart Security as a HomeKit security system: arm Stay / Away, disarm, alarm state (unofficial, ecobee cloud)",
   "type": "module",
   "main": "index.js",
@@ -17,6 +17,7 @@
   "homepage": "https://github.com/seanfletchr/homebridge-ecobee-security#readme",
   "keywords": [
     "homebridge-plugin",
+    "supports-hap",
     "homebridge",
     "homekit",
     "ecobee",

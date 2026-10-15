@@ -1,4 +1,4 @@
-<p align="center"><img src="icon.png" alt="" width="128" height="128"></p>
+<p align="center"><img src="icon.png" alt="" width="100" height="100"></p>
 
 # homebridge-ecobee-security
 

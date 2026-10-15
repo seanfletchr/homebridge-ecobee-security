@@ -1,0 +1,40 @@
+{
+  "name": "homebridge-ecobee-security",
+  "displayName": "ecobee Smart Security",
+  "version": "0.2.0",
+  "description": "ecobee Smart Security as a HomeKit security system: arm Stay / Away, disarm, alarm state (unofficial, ecobee cloud)",
+  "type": "module",
+  "main": "index.js",
+  "license": "MIT",
+  "author": "Sean Fletcher",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/seanfletchr/homebridge-ecobee-security.git"
+  },
+  "bugs": {
+    "url": "https://github.com/seanfletchr/homebridge-ecobee-security/issues"
+  },
+  "homepage": "https://github.com/seanfletchr/homebridge-ecobee-security#readme",
+  "keywords": [
+    "homebridge-plugin",
+    "homebridge",
+    "homekit",
+    "ecobee",
+    "smart security",
+    "security system",
+    "alarm"
+  ],
+  "engines": {
+    "node": "^22.0.0 || ^24.0.0",
+    "homebridge": "^1.8.0 || ^2.0.0"
+  },
+  "files": [
+    "index.js",
+    "lib",
+    "bin",
+    "config.schema.json",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ]
+}

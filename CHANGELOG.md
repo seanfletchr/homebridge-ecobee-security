@@ -4,6 +4,10 @@
 
 - Hold API: several plugins (e.g. two robot vacuums) can hold Stay at once; Away comes back only
   when the last one releases. `/release` answers `waiting: [names]` while others still hold.
+- New setting **Allow security holds** (`allowHolds`, off by default): other plugins can only hold
+  Stay with it turned on; otherwise `/hold` and `/release` answer 403 with the reason, and a hold
+  left over from before is dropped without re-arming Away. **If you use homebridge-narwal-freo's
+  security hold, turn this on.**
 
 ## 0.4.2
 

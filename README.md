@@ -62,6 +62,7 @@ node <plugin folder>/bin/ecobee-login.js --browser  # website sign-in
   "offerNight": false,
   "alarmTrigger": "incident",
   "smokeSensor": true,
+  "allowHolds": false,
   "airQuality": true,
   "co2Alert": 1000,
   "_bridge": { "username": "…", "port": 51926, "name": "Ecobee Security Bridge" }
@@ -75,6 +76,7 @@ node <plugin folder>/bin/ecobee-login.js --browser  # website sign-in
 | `offerNight` | `false` | Adds Night to the Home app. ecobee has no Night mode, so Night arms Stay and the tile keeps showing Night until the state changes (a Stay armed elsewhere shows as Stay). HomeKit only picks up a changed list of modes on a new control, so changing this setting recreates the security system in the Home app: set up scenes and automations that use it again. |
 | `alarmTrigger` | `"incident"` | When the tile enters **Triggered**: `"incident"` immediately, when ecobee opens an incident as a door or sensor trips while armed (mirrors the ecobee app); `"entryDelay"` only after the entry (disarm) delay runs out without a disarm. Smoke alarms always trigger immediately. |
 | `smokeSensor` | `true` | Adds a separate **Smoke Alarm** accessory (a Smoke Sensor) that detects smoke while ecobee has a smoke-alarm incident open, for automations and Home app smoke notifications. Set to `false` to remove it. |
+| `allowHolds` | `false` | Lets other Homebridge plugins ask for a **security hold** (see below), e.g. so a robot vacuum can clean while you're away without setting off the motion sensors. Off: hold requests are refused, and a hold left over from before is dropped without re-arming Away. |
 | `airQuality` | `true` | For each thermostat with an air quality sensor: an accessory "&lt;thermostat&gt; Air Quality" with an **Air Quality Sensor** (overall level; VOC as ecobee reports it, in ppb, which the Home app labels µg/m³) and a **Carbon Dioxide Sensor** (ppm). Read every 5 minutes. The level follows the ecobee app's Clean–Poor bar: its first two segments are Excellent, then Good, Fair, Inferior, Poor; Unknown while the sensor calibrates. |
 | `co2Alert` | `1000` | CO2 (ppm) at or above which the Carbon Dioxide Sensor reports abnormal levels. |
 
@@ -90,13 +92,16 @@ node <plugin folder>/bin/ecobee-login.js --browser  # website sign-in
 - **Siri:** the Home app calls Stay "Home". Asking Siri for Home or for Stay mode both arm Stay.
 - **Night** is only offered with `offerNight`; ecobee has no Night mode of its own.
 - After three failed reads in a row the accessory shows a fault; reads back off up to 5 minutes.
-- **Hold for other plugins:** a Unix socket at `<homebridge storage>/ecobee-security/control.sock`
-  (mode 600, homebridge user only) lets another plugin, e.g. homebridge-narwal-freo, ask for a
-  temporary Stay: `POST /hold?by=<name>` switches Away (or arming Away) to Stay and remembers who
-  asked; `POST /release?by=<name>` arms Away again once **every** holder has released (with two
-  robots out, the first one back doesn't re-arm), unless the state was changed by anyone in between,
-  in which case the hold is just dropped. The hold survives restarts (in `state.json`). `/hold`
-  answers `ok: false` when the alarm is triggered or the state is unknown.
+- **Security holds** (with `allowHolds`): a Unix socket at
+  `<homebridge storage>/ecobee-security/control.sock` (mode 600, homebridge user only) lets another
+  plugin, e.g. homebridge-narwal-freo's
+  security hold, ask for a temporary Stay: `POST /hold?by=<name>` switches Away (or arming Away) to
+  Stay and remembers who asked; `POST /release?by=<name>` arms Away again once **every** holder has
+  released (with two robots out, the first one back doesn't re-arm), unless the state was changed by
+  anyone in between, in which case the hold is just dropped. The hold survives restarts (in
+  `state.json`). `/hold` answers `ok: false` with a `reason` when the alarm is triggered or the state
+  is unknown; with `allowHolds` off, both paths answer 403. In the other plugin, use this socket path
+  as its security endpoint (homebridge-narwal-freo does by default).
 
 ## API notes
 

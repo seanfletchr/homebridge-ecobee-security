@@ -65,6 +65,12 @@
         "default": true,
         "description": "Adds a separate \"Smoke Alarm\" accessory to the Home app that detects smoke whenever ecobee reports a smoke-alarm incident, so you can use it in automations and get Home app smoke notifications."
       },
+      "allowHolds": {
+        "title": "Allow security holds",
+        "type": "boolean",
+        "default": false,
+        "description": "Lets other Homebridge plugins (for example homebridge-narwal-freo, so a robot vacuum can clean while you're away) switch Away to Stay for a while and back to Away when they're done. They ask through a socket only the homebridge user can use. If you change the security system in between, it's left as you set it. See \"Security holds\" in the README."
+      },
       "airQuality": {
         "title": "Air quality sensors",
         "type": "boolean",

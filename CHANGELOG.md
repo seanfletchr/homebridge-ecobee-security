@@ -1,7 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.4.1
 
+- Plugin icon in the README.
 - Catch and log errors creating the storage folder or control socket instead of stopping the bridge.
 
 ## 0.4.0

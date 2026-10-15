@@ -7,7 +7,7 @@
   existing control).
 - `alarmTrigger: "entryDelay"`: show Alarm triggered only once an intrusion has outlasted the entry
   delay without a disarm, instead of as soon as ecobee opens the incident. Smoke still shows at once.
-- `smokeSensor` (on by default): a Smoke Sensor that detects smoke while ecobee has a smoke-alarm
+- `smokeSensor` (on by default): a separate Smoke Alarm accessory that detects smoke while ecobee has a smoke-alarm
   incident open.
 - Air quality (`airQuality`, on by default): for ecobee thermostats with an air quality sensor, an
   Air Quality Sensor (level, VOC) and a Carbon Dioxide Sensor (ppm, alert at `co2Alert`, 1000 ppm).

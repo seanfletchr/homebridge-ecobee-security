@@ -63,7 +63,7 @@
         "title": "Smoke sensor",
         "type": "boolean",
         "default": true,
-        "description": "Adds a Smoke Sensor to the Home app that detects smoke whenever ecobee reports a smoke-alarm incident, so you can use it in automations and get Home app smoke notifications."
+        "description": "Adds a separate \"Smoke Alarm\" accessory to the Home app that detects smoke whenever ecobee reports a smoke-alarm incident, so you can use it in automations and get Home app smoke notifications."
       },
       "airQuality": {
         "title": "Air quality sensors",

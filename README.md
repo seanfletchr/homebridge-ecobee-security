@@ -27,21 +27,25 @@ Running it as a child bridge is recommended. Requires Node 22 or 24 and Homebrid
 
 ## Sign-in
 
-ecobee's login page shows a CAPTCHA to scripts and the account may use MFA, so the plugin doesn't
-take your password. You sign in once in Chrome and give the plugin a refresh token:
+Open the plugin's **Settings** in the Homebridge UI and sign in with your ecobee email and password,
+then the verification code if your account uses MFA. The plugin saves a refresh token in its config;
+your password is sent only to ecobee and isn't stored. Restart the bridge afterwards.
+
+The plugin renews its access token every 2 hours and keeps the current refresh token in
+`<homebridge storage>/ecobee-security/state.json` (mode 600). A newly saved token always replaces the
+stored one. You only need to sign in again if ecobee revokes the token (for example after a password
+change or "sign out of all devices"); the log then says so and the accessory shows a fault.
+
+**If sign-in fails** (for example ecobee asks for a CAPTCHA), the settings page also offers sign-in
+on ecobee's website: you sign in in a desktop browser and paste the final redirect URL from its
+developer tools.
+
+**Without the Homebridge UI**, sign in from a terminal and paste the printed token into the config:
 
 ```
-node <plugin folder>/bin/ecobee-login.js
+node <plugin folder>/bin/ecobee-login.js            # email, password, MFA code
+node <plugin folder>/bin/ecobee-login.js --browser  # website sign-in
 ```
-
-(any machine with Node 22+; on the Homebridge Pi: `/opt/homebridge/bin/node /var/lib/homebridge/node_modules/homebridge-ecobee-security/bin/ecobee-login.js`).
-It prints a link and step-by-step instructions, then the refresh token. Paste the token into the
-plugin settings and restart the bridge. The plugin renews its access token every 2 hours and keeps
-the current refresh token in `<homebridge storage>/ecobee-security/state.json` (mode 600). A newly
-pasted token always replaces the stored one.
-
-You only need to sign in again if ecobee revokes the token (for example after a password change or
-"sign out of all devices"); the log then says so and the accessory shows a fault.
 
 ## Config
 

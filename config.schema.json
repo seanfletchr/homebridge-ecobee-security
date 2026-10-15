@@ -2,10 +2,10 @@
   "pluginAlias": "EcobeeSecurityPlatform",
   "pluginType": "platform",
   "singular": true,
-  "headerDisplay": "Shows ecobee Smart Security as a security system in Apple Home (arm Stay / Away, disarm, alarm state). Unofficial: uses the same ecobee cloud as the app. To get a refresh token, run bin/ecobee-login.js from this plugin's folder (see README).",
+  "customUi": true,
+  "headerDisplay": "Shows ecobee Smart Security as a security system in Apple Home (arm Stay / Away, disarm, alarm state). Unofficial: uses the same ecobee cloud as the app.",
   "schema": {
     "type": "object",
-    "required": ["refreshToken"],
     "properties": {
       "name": {
         "title": "Name",
@@ -16,8 +16,10 @@
       "refreshToken": {
         "title": "Refresh token",
         "type": "string",
-        "x-schema-form": { "type": "password" },
-        "description": "From bin/ecobee-login.js. Only needed again if ecobee signs the plugin out (password change, 'sign out everywhere')."
+        "x-schema-form": {
+          "type": "password"
+        },
+        "description": "Filled in when you sign in above. Only needed again if ecobee signs the plugin out (password change, 'sign out everywhere')."
       },
       "homeId": {
         "title": "Home ID",

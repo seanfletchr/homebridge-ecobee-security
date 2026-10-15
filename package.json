@@ -1,7 +1,7 @@
 {
   "name": "homebridge-ecobee-security",
   "displayName": "ecobee Smart Security",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "ecobee Smart Security as a HomeKit security system: arm Stay / Away, disarm, alarm state (unofficial, ecobee cloud)",
   "type": "module",
   "main": "index.js",
@@ -32,9 +32,13 @@
     "index.js",
     "lib",
     "bin",
+    "homebridge-ui",
     "config.schema.json",
     "README.md",
     "CHANGELOG.md",
     "LICENSE"
-  ]
+  ],
+  "dependencies": {
+    "@homebridge/plugin-ui-utils": "^2.2.6"
+  }
 }

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0
+
+- Sign in from the plugin's settings page in the Homebridge UI with your ecobee email, password
+  and MFA code. No terminal or browser developer tools needed; the website sign-in is still there
+  as a fallback.
+- `bin/ecobee-login.js` signs in with email and password by default; `--browser` for the old way.
+
 ## 0.2.0
 
 - Control socket (`control.sock`) so other plugins can hold the system at Stay and release it to

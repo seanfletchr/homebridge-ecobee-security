@@ -1,0 +1,153 @@
+<div class="card card-body mb-3">
+  <h5 class="mb-1">ecobee account</h5>
+  <p id="status" class="text-muted mb-3"></p>
+
+  <form id="password-form" autocomplete="on">
+    <div class="mb-2">
+      <label for="email" class="form-label">ecobee email</label>
+      <input type="email" class="form-control" id="email" autocomplete="username" required>
+    </div>
+    <div class="mb-2">
+      <label for="password" class="form-label">Password</label>
+      <input type="password" class="form-control" id="password" autocomplete="current-password" required>
+      <div class="form-text">Sent only to ecobee to sign in. The plugin keeps a sign-in token, never your password.</div>
+    </div>
+    <button type="submit" class="btn btn-primary">Sign in</button>
+  </form>
+
+  <form id="mfa-form" hidden>
+    <div class="mb-2">
+      <label for="code" class="form-label" id="code-label">Verification code</label>
+      <input type="text" class="form-control" id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="10" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Verify</button>
+    <button type="button" class="btn btn-link" id="mfa-cancel">Start over</button>
+  </form>
+
+  <div id="error" class="alert alert-danger mt-3 mb-0" role="alert" hidden></div>
+  <div id="done" class="alert alert-success mt-3 mb-0" role="status" hidden>
+    Signed in and saved. Restart the bridge this plugin runs on (or Homebridge) to use the new sign-in.
+  </div>
+
+  <details class="mt-3" id="browser">
+    <summary>Sign in on ecobee's website instead</summary>
+    <p class="mt-2 mb-2 small">Use this if signing in above keeps failing (for example if ecobee asks for a CAPTCHA). You'll need a desktop browser with developer tools.</p>
+    <ol class="small ps-3">
+      <li>In Chrome, open a new tab, open DevTools (Option-Command-I or F12), go to <b>Network</b> and tick <b>Preserve log</b>.</li>
+      <li>In that tab, open <a id="browser-link" href="#" target="_blank" rel="noopener">this sign-in link</a> and sign in.</li>
+      <li>When the page goes blank, type <code>code=</code> in the Network filter, right-click the entry and choose <b>Copy &gt; Copy URL</b>. It starts with <code>com.ecobee.athenamobile://</code></li>
+      <li>Paste it here straight away (the code expires within a minute):</li>
+    </ol>
+    <form id="browser-form" class="d-flex gap-2">
+      <input type="text" class="form-control" id="callback" placeholder="com.ecobee.athenamobile://…" required>
+      <button type="submit" class="btn btn-primary">Finish</button>
+    </form>
+  </details>
+</div>
+
+<script>
+(async () => {
+  const PLATFORM = 'EcobeeSecurityPlatform';
+  const $ = id => document.getElementById(id);
+  const passwordForm = $('password-form');
+  const mfaForm = $('mfa-form');
+
+  function showError(message) {
+    $('error').textContent = message;
+    $('error').hidden = !message;
+    $('done').hidden = true;
+  }
+
+  async function showStatus() {
+    const [block] = await homebridge.getPluginConfig();
+    $('status').textContent = block?.refreshToken
+      ? 'Signed in. You only need to sign in again if the log says ecobee signed the plugin out (for example after a password change).'
+      : 'Not signed in yet. Sign in with your ecobee account to connect the plugin.';
+  }
+
+  async function call(path, body) {
+    showError('');
+    homebridge.showSpinner();
+    try {
+      return await homebridge.request(path, body);
+    } catch (error) {
+      showError(error.message || 'Sign-in failed.');
+      return undefined;
+    } finally {
+      homebridge.hideSpinner();
+    }
+  }
+
+  async function saveToken(refreshToken) {
+    const blocks = await homebridge.getPluginConfig();
+    const block = blocks[0] ?? { platform: PLATFORM, name: 'Security System' };
+    block.refreshToken = refreshToken;
+    // Re-show the settings form afterwards so it picks up the new token.
+    homebridge.hideSchemaForm();
+    await homebridge.updatePluginConfig([block, ...blocks.slice(1)]);
+    await homebridge.savePluginConfig();
+    homebridge.showSchemaForm();
+    passwordForm.reset();
+    mfaForm.reset();
+    passwordForm.hidden = false;
+    mfaForm.hidden = true;
+    $('callback').value = '';
+    $('browser').open = false;
+    $('done').hidden = false;
+    homebridge.toast.success('Signed in to ecobee.');
+    await showStatus();
+  }
+
+  passwordForm.addEventListener('submit', async event => {
+    event.preventDefault();
+    const result = await call('/password', { email: $('email').value, password: $('password').value });
+    $('password').value = '';
+    if (result?.refreshToken) {
+      await saveToken(result.refreshToken);
+    } else if (result?.mfa) {
+      $('code-label').textContent = result.mfa === 'oob'
+        ? 'Enter the code ecobee just sent you'
+        : 'Enter the code from your authenticator app';
+      passwordForm.hidden = true;
+      mfaForm.hidden = false;
+      $('code').focus();
+    }
+  });
+
+  mfaForm.addEventListener('submit', async event => {
+    event.preventDefault();
+    const result = await call('/mfa', { code: $('code').value });
+    $('code').value = '';
+    if (result?.refreshToken) {
+      await saveToken(result.refreshToken);
+    }
+  });
+
+  $('mfa-cancel').addEventListener('click', () => {
+    showError('');
+    mfaForm.reset();
+    mfaForm.hidden = true;
+    passwordForm.hidden = false;
+  });
+
+  $('browser').addEventListener('toggle', async () => {
+    if ($('browser').open) {
+      const result = await call('/browser-link');
+      if (result?.url) {
+        $('browser-link').href = result.url;
+      }
+    }
+  });
+
+  $('browser-form').addEventListener('submit', async event => {
+    event.preventDefault();
+    const result = await call('/browser-finish', { callbackUrl: $('callback').value });
+    if (result?.refreshToken) {
+      await saveToken(result.refreshToken);
+    }
+  });
+
+  await showStatus();
+  homebridge.showSchemaForm();
+})();
+</script>

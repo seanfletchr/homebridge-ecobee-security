@@ -7,6 +7,7 @@
   delay without a disarm, instead of as soon as ecobee opens the incident. Smoke still shows at once.
 - `smokeSensor` (on by default): a Smoke Sensor that detects smoke while ecobee has a smoke-alarm
   incident open.
+- The accessory reports the plugin version as its firmware version.
 - The hold API refuses a hold while any alarm incident is open, whichever `alarmTrigger` is set.
 
 ## 0.3.0

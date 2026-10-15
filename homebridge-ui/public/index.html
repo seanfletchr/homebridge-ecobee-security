@@ -1,7 +1,19 @@
-<div class="card card-body mb-3">
-  <h5 class="mb-1">ecobee account</h5>
-  <p id="status" class="text-muted mb-3"></p>
+<style>
+  /* Inherit the theme's text colour; Bootstrap's muted grey is unreadable on Homebridge's dark themes. */
+  .hint { opacity: 0.75; font-size: 0.875em; }
+</style>
 
+<div class="card card-body mb-3">
+  <h5 class="mb-3">ecobee account</h5>
+
+  <div id="signed-in" hidden>
+    <div class="alert alert-success mb-2" role="status" id="signed-in-text">Signed in to ecobee.</div>
+    <p class="hint mb-2" id="signed-in-hint">You only need to sign in again if the log says ecobee signed the plugin out (for example after a password change).</p>
+    <button type="button" class="btn btn-secondary" id="sign-in-again">Sign in again</button>
+  </div>
+
+  <div id="signin" hidden>
+  <p class="hint mb-3" id="signin-hint">Sign in with your ecobee account to connect the plugin.</p>
   <form id="password-form" autocomplete="on">
     <div class="mb-2">
       <label for="email" class="form-label">ecobee email</label>
@@ -10,9 +22,10 @@
     <div class="mb-2">
       <label for="password" class="form-label">Password</label>
       <input type="password" class="form-control" id="password" autocomplete="current-password" required>
-      <div class="form-text">Sent only to ecobee to sign in. The plugin keeps a sign-in token, never your password.</div>
+      <div class="hint mt-1">Sent only to ecobee to sign in. The plugin keeps a sign-in token, never your password.</div>
     </div>
     <button type="submit" class="btn btn-primary">Sign in</button>
+    <button type="button" class="btn btn-link" id="sign-in-cancel" hidden>Cancel</button>
   </form>
 
   <form id="mfa-form" hidden>
@@ -25,13 +38,10 @@
   </form>
 
   <div id="error" class="alert alert-danger mt-3 mb-0" role="alert" hidden></div>
-  <div id="done" class="alert alert-success mt-3 mb-0" role="status" hidden>
-    Signed in and saved. Restart the bridge this plugin runs on (or Homebridge) to use the new sign-in.
-  </div>
 
   <details class="mt-3" id="browser">
     <summary>Sign in on ecobee's website instead</summary>
-    <p class="mt-2 mb-2 small">Use this if signing in above keeps failing (for example if ecobee asks for a CAPTCHA). You'll need a desktop browser with developer tools.</p>
+    <p class="hint mt-2 mb-2">Use this if signing in above keeps failing (for example if ecobee asks for a CAPTCHA). You'll need a desktop browser with developer tools.</p>
     <ol class="small ps-3">
       <li>In Chrome, open a new tab, open DevTools (Option-Command-I or F12), go to <b>Network</b> and tick <b>Preserve log</b>.</li>
       <li>In that tab, open <a id="browser-link" href="#" target="_blank" rel="noopener">this sign-in link</a> and sign in.</li>
@@ -43,6 +53,7 @@
       <button type="submit" class="btn btn-primary">Finish</button>
     </form>
   </details>
+  </div>
 </div>
 
 <script>
@@ -55,14 +66,21 @@
   function showError(message) {
     $('error').textContent = message;
     $('error').hidden = !message;
-    $('done').hidden = true;
   }
 
-  async function showStatus() {
+  /** Show the signed-in summary, or the sign-in forms if there's no token (or the user asked). */
+  async function showStatus({ justSignedIn = false, signIn = false } = {}) {
     const [block] = await homebridge.getPluginConfig();
-    $('status').textContent = block?.refreshToken
-      ? 'Signed in. You only need to sign in again if the log says ecobee signed the plugin out (for example after a password change).'
-      : 'Not signed in yet. Sign in with your ecobee account to connect the plugin.';
+    const signedIn = Boolean(block?.refreshToken) && !signIn;
+    $('signed-in').hidden = !signedIn;
+    $('signin').hidden = signedIn;
+    $('signed-in-text').textContent = justSignedIn
+      ? 'Signed in and saved. Restart the bridge this plugin runs on (or Homebridge) to use the new sign-in.'
+      : 'Signed in to ecobee.';
+    $('sign-in-cancel').hidden = !block?.refreshToken;
+    $('signin-hint').textContent = block?.refreshToken
+      ? 'Signing in again replaces the saved sign-in.'
+      : 'Sign in with your ecobee account to connect the plugin.';
   }
 
   async function call(path, body) {
@@ -93,9 +111,8 @@
     mfaForm.hidden = true;
     $('callback').value = '';
     $('browser').open = false;
-    $('done').hidden = false;
     homebridge.toast.success('Signed in to ecobee.');
-    await showStatus();
+    await showStatus({ justSignedIn: true });
   }
 
   passwordForm.addEventListener('submit', async event => {
@@ -128,6 +145,18 @@
     mfaForm.reset();
     mfaForm.hidden = true;
     passwordForm.hidden = false;
+  });
+
+  $('sign-in-again').addEventListener('click', async () => {
+    showError('');
+    await showStatus({ signIn: true });
+    $('email').focus();
+  });
+
+  $('sign-in-cancel').addEventListener('click', async () => {
+    showError('');
+    passwordForm.reset();
+    await showStatus();
   });
 
   $('browser').addEventListener('toggle', async () => {

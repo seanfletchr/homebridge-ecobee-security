@@ -92,19 +92,49 @@ node <plugin folder>/bin/ecobee-login.js --browser  # website sign-in
 - **Siri:** the Home app calls Stay "Home". Asking Siri for Home or for Stay mode both arm Stay.
 - **Night** is only offered with `offerNight`; ecobee has no Night mode of its own.
 - After three failed reads in a row the accessory shows a fault; reads back off up to 5 minutes.
-- **Security holds** (with `allowHolds`): a Unix socket at
-  `<homebridge storage>/ecobee-security/control.sock` (mode 600, homebridge user only) lets another
-  plugin, e.g. homebridge-narwal-freo's
-  security hold, ask for a temporary Stay: `POST /hold?by=<name>` switches Away (or arming Away) to
-  Stay and remembers who asked; `POST /release?by=<name>` arms Away again once **every** holder has
-  released (with two robots out, the first one back doesn't re-arm), unless the state was changed by
-  anyone in between, in which case the hold is just dropped. The hold survives restarts (in
-  `state.json`). The plugin, not the caller, decides: the only change a hold can make is Away → Stay
-  and, when the last holder releases, back to Away, both read from ecobee's live state at that
-  moment. Any change by someone else during the hold (disarm, arm Away, Home app, alarm) cancels the
-  re-arm. `/hold` answers `ok: false` with a `reason` when an alarm incident is open or the state
-  can't be read, and `/release` answers an error (without arming) if the state can't be read; with `allowHolds` off, both paths answer 403. In the other plugin, use this socket path
-  as its security endpoint (homebridge-narwal-freo does by default).
+- **Security holds** for other plugins, with `allowHolds`: see below.
+
+## Security holds
+
+A security hold lets another Homebridge plugin, such as a robot vacuum, keep the motion sensors from
+going off while it moves around the house when you're away. The plugin can only *ask*; this plugin
+decides, by four rules:
+
+1. **Hold:** if the system is armed Away (or arming Away), it's switched to Stay. If an alarm is in
+   progress, or ecobee can't be read, the hold is refused. Otherwise nothing changes.
+2. **Release:** once **every** plugin that asked is done, and the system is still in Stay, it's
+   armed Away again (with the normal exit delay).
+3. **Your change wins:** anything someone else does during a hold — disarm, arm Away, a change in
+   the Home app, an alarm — cancels it, and the system is left as it is.
+4. **No timers:** nothing changes unless a plugin asks or you act.
+
+Every decision uses ecobee's state read at that moment, not the last poll. Holds are off until you
+turn on **Allow security holds** in the settings; turning it off drops a hold left over from before
+(without arming Away).
+
+**Limits** that follow from these rules:
+
+- **Your own Stay looks like the hold's Stay.** If you disarm and re-arm Stay in the ecobee app or at
+  the keypad within a few seconds (between two reads), or while the bridge is restarting, the
+  release still arms Away: ecobee doesn't say who last changed the state. Changes in the Home app are
+  always seen.
+- **Your change wins even with a robot still out.** After you cancel a hold (say, disarm), arming
+  Away while the robot is still cleaning can set off the motion sensors: a plugin only asks for a
+  hold when it starts.
+- **Every plugin on this Homebridge is trusted.** The setting is all or nothing: any plugin running
+  as the homebridge user can ask, and the name it gives is its own claim. Two plugins with the same
+  name share one hold.
+- **A plugin that never releases leaves the system in Stay** until you change it.
+
+**API** (for plugin authors): a Unix socket at `<homebridge storage>/ecobee-security/control.sock`
+(mode 600, homebridge user only; homebridge-narwal-freo uses it by default).
+
+- `POST /hold?by=<name>` → `{ "ok": true, "held": true|false, "state": "…" }`, or `"ok": false`
+  with a `"reason"`: don't start.
+- `POST /release?by=<name>` → `{ "released": true|false, "state": "…", "waiting": [names] }`;
+  `waiting` lists holders still out.
+- With `allowHolds` off, both answer 403; if ecobee can't be read (release) or isn't connected
+  yet, a 5xx with `"error"` — try again later. Holds survive restarts (in `state.json`).
 
 ## API notes
 

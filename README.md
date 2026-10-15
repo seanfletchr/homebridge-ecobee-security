@@ -66,7 +66,7 @@ node <plugin folder>/bin/ecobee-login.js --browser  # website sign-in
 | Setting | Default | |
 |---|---|---|
 | `offerNight` | `false` | Adds Night to the Home app. ecobee has no Night mode, so Night arms Stay and the tile keeps showing Night until the state changes (a Stay armed elsewhere shows as Stay). |
-| `alarmTrigger` | `"incident"` | When the tile shows **Alarm triggered**: `"incident"` as soon as ecobee opens an incident, which happens the moment a door or sensor trips while armed, during the entry delay (like the ecobee app); `"entryDelay"` only once that has lasted the entry delay without a disarm, so automations don't fire while you're disarming. Smoke alarms always show at once. |
+| `alarmTrigger` | `"incident"` | When the tile enters **Triggered**: `"incident"` immediately, when ecobee opens an incident as a door or sensor trips while armed (mirrors the ecobee app); `"entryDelay"` only after the entry (disarm) delay runs out without a disarm. Smoke alarms always trigger immediately. |
 
 ## How it behaves
 

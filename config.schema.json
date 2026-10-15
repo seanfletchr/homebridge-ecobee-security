@@ -40,24 +40,24 @@
         "description": "Adds Night to the Home app, for automations or Siri that use it. ecobee has no Night mode, so Night arms Stay; the Home app keeps showing Night until the state changes."
       },
       "alarmTrigger": {
-        "title": "Show \"Alarm triggered\"",
+        "title": "Enter Triggered State",
         "type": "string",
         "default": "incident",
         "oneOf": [
           {
-            "title": "As soon as ecobee opens an incident, during the entry delay (like the ecobee app)",
+            "title": "Immediately (mirror ecobee app)",
             "enum": [
               "incident"
             ]
           },
           {
-            "title": "Only once the entry delay runs out without a disarm",
+            "title": "After the Entry/Disarm delay",
             "enum": [
               "entryDelay"
             ]
           }
         ],
-        "description": "ecobee opens an incident as soon as a door or sensor trips while armed. The second option waits out the entry delay, so automations on Alarm triggered don't fire while you're disarming. Smoke alarms always show at once."
+        "description": "Smoke alarms always trigger immediately."
       }
     }
   }

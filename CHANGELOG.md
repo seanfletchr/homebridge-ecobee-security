@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Catch and log errors creating the storage folder or control socket instead of stopping the bridge.
+
 ## 0.4.0
 
 - `offerNight`: adds Night to the Home app; it arms ecobee's Stay and keeps showing Night. Changing

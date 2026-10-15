@@ -2,7 +2,9 @@
 
 ## 0.4.0
 
-- `offerNight`: adds Night to the Home app; it arms ecobee's Stay and keeps showing Night.
+- `offerNight`: adds Night to the Home app; it arms ecobee's Stay and keeps showing Night. Changing
+  the setting recreates the security system in HomeKit (the Home app doesn't pick up new modes on an
+  existing control).
 - `alarmTrigger: "entryDelay"`: show Alarm triggered only once an intrusion has outlasted the entry
   delay without a disarm, instead of as soon as ecobee opens the incident. Smoke still shows at once.
 - `smokeSensor` (on by default): a Smoke Sensor that detects smoke while ecobee has a smoke-alarm

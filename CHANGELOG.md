@@ -9,6 +9,8 @@
   delay without a disarm, instead of as soon as ecobee opens the incident. Smoke still shows at once.
 - `smokeSensor` (on by default): a Smoke Sensor that detects smoke while ecobee has a smoke-alarm
   incident open.
+- Air quality (`airQuality`, on by default): for ecobee thermostats with an air quality sensor, an
+  Air Quality Sensor (level, VOC) and a Carbon Dioxide Sensor (ppm, alert at `co2Alert`, 1000 ppm).
 - The accessory reports the plugin version as its firmware version.
 - The hold API refuses a hold while any alarm incident is open, whichever `alarmTrigger` is set.
 

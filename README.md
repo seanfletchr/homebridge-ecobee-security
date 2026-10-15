@@ -1,7 +1,9 @@
 # homebridge-ecobee-security
 
 Shows **ecobee Smart Security** in Apple Home as a security system: arm **Stay**, arm **Away**,
-**disarm**, and **Alarm triggered** when ecobee has an open intrusion or smoke incident. Works with
+**disarm**, and **Alarm triggered** when ecobee has an open intrusion or smoke incident. It also adds
+**air quality** sensors for ecobee thermostats that have one (ecobee Premium), which ecobee's own
+HomeKit integration leaves out. Works with
 Siri ("set the security system to away") and Home automations. ecobee removed Smart Security from
 its HomeKit integration; this brings it back.
 
@@ -58,6 +60,8 @@ node <plugin folder>/bin/ecobee-login.js --browser  # website sign-in
   "offerNight": false,
   "alarmTrigger": "incident",
   "smokeSensor": true,
+  "airQuality": true,
+  "co2Alert": 1000,
   "_bridge": { "username": "…", "port": 51926, "name": "Ecobee Security Bridge" }
 }
 ```
@@ -69,6 +73,8 @@ node <plugin folder>/bin/ecobee-login.js --browser  # website sign-in
 | `offerNight` | `false` | Adds Night to the Home app. ecobee has no Night mode, so Night arms Stay and the tile keeps showing Night until the state changes (a Stay armed elsewhere shows as Stay). HomeKit only picks up a changed list of modes on a new control, so changing this setting recreates the security system in the Home app: set up scenes and automations that use it again. |
 | `alarmTrigger` | `"incident"` | When the tile enters **Triggered**: `"incident"` immediately, when ecobee opens an incident as a door or sensor trips while armed (mirrors the ecobee app); `"entryDelay"` only after the entry (disarm) delay runs out without a disarm. Smoke alarms always trigger immediately. |
 | `smokeSensor` | `true` | Adds a **Smoke Sensor** next to the security system that detects smoke while ecobee has a smoke-alarm incident open, for automations and Home app smoke notifications. Set to `false` to remove it. |
+| `airQuality` | `true` | For each thermostat with an air quality sensor: an accessory "&lt;thermostat&gt; Air Quality" with an **Air Quality Sensor** (overall level; VOC as ecobee reports it, in ppb, which the Home app labels µg/m³) and a **Carbon Dioxide Sensor** (ppm). Read every 5 minutes. The level follows the ecobee app's Clean–Poor bar: its first two segments are Excellent, then Good, Fair, Inferior, Poor; Unknown while the sensor calibrates. |
+| `co2Alert` | `1000` | CO2 (ppm) at or above which the Carbon Dioxide Sensor reports abnormal levels. |
 
 ## How it behaves
 

@@ -64,6 +64,22 @@
         "type": "boolean",
         "default": true,
         "description": "Adds a Smoke Sensor to the Home app that detects smoke whenever ecobee reports a smoke-alarm incident, so you can use it in automations and get Home app smoke notifications."
+      },
+      "airQuality": {
+        "title": "Air quality sensors",
+        "type": "boolean",
+        "default": true,
+        "description": "For ecobee thermostats with an air quality sensor (ecobee Premium): adds an Air Quality Sensor (overall level and VOC) and a Carbon Dioxide Sensor (CO2 in ppm) per thermostat. ecobee's own HomeKit integration doesn't show these. Updated every 5 minutes."
+      },
+      "co2Alert": {
+        "title": "CO2 alert level (ppm)",
+        "type": "integer",
+        "default": 1000,
+        "minimum": 400,
+        "description": "The Carbon Dioxide Sensor reports abnormal CO2 at or above this level, for Home app notifications and automations (for example, turning on ventilation).",
+        "condition": {
+          "functionBody": "return model.airQuality !== false;"
+        }
       }
     }
   }

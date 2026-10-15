@@ -61,3 +61,15 @@ TargetState: STAY_ARM 0 / AWAY_ARM 1 / DISARM 3; during an exit delay current = 
 Opening a door while armed Stay creates an incident immediately, during the entry delay:
 `{"status":"OPEN","detectedIntrusion":true,"detectedSmokeAlarm":false}`. Disarming removes it from
 `monitoring.incidents` (the list goes back to `[]`; no resolved status is reported).
+
+## Air quality (captured 2026-10-15)
+The app lists thermostats and their air quality scores over GraphQL:
+```graphql
+query ThermostatsAirQuality($homeID: ID!) { homes(id: $homeID) { id devices { id
+  thermostats { id name airQuality { hasAirQualityEnabled carbonDioxideScore vocScore airQualityScore isCalibrating } } } } }
+```
+Scores run 0 (clean) to 1 (poor); `airQualityScore` = REST `actualAQScore` / 300. The readings come from
+the older REST API with the same bearer token, selecting thermostats by id (`selectionType:
+"registered"` returns none on this account):
+`GET https://api.ecobee.com/1/thermostat?json={"selection":{"selectionType":"thermostats","selectionMatch":"<id>,<id>","includeRuntime":true}}`
+→ `thermostatList[].runtime.{actualCO2 (ppm), actualVOC (ppb), actualAQScore, actualAQAccuracy, actualHumidity}`.

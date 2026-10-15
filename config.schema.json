@@ -57,7 +57,13 @@
             ]
           }
         ],
-        "description": "Smoke alarms always trigger immediately."
+        "description": "ecobee opens an incident as soon as a door or sensor trips while armed. \"After the Entry/Disarm delay\" waits until that delay runs out without a disarm, so automations on Triggered don't fire while you're walking in to disarm. Smoke alarms always trigger immediately."
+      },
+      "smokeSensor": {
+        "title": "Smoke sensor",
+        "type": "boolean",
+        "default": true,
+        "description": "Adds a Smoke Sensor to the Home app that detects smoke whenever ecobee reports a smoke-alarm incident, so you can use it in automations and get Home app smoke notifications."
       }
     }
   }

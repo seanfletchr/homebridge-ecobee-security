@@ -57,6 +57,7 @@ node <plugin folder>/bin/ecobee-login.js --browser  # website sign-in
   "pollInterval": 10,
   "offerNight": false,
   "alarmTrigger": "incident",
+  "smokeSensor": true,
   "_bridge": { "username": "…", "port": 51926, "name": "Ecobee Security Bridge" }
 }
 ```
@@ -67,6 +68,7 @@ node <plugin folder>/bin/ecobee-login.js --browser  # website sign-in
 |---|---|---|
 | `offerNight` | `false` | Adds Night to the Home app. ecobee has no Night mode, so Night arms Stay and the tile keeps showing Night until the state changes (a Stay armed elsewhere shows as Stay). |
 | `alarmTrigger` | `"incident"` | When the tile enters **Triggered**: `"incident"` immediately, when ecobee opens an incident as a door or sensor trips while armed (mirrors the ecobee app); `"entryDelay"` only after the entry (disarm) delay runs out without a disarm. Smoke alarms always trigger immediately. |
+| `smokeSensor` | `true` | Adds a **Smoke Sensor** next to the security system that detects smoke while ecobee has a smoke-alarm incident open, for automations and Home app smoke notifications. Set to `false` to remove it. |
 
 ## How it behaves
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.0
+
+- `offerNight`: adds Night to the Home app; it arms ecobee's Stay and keeps showing Night.
+- `alarmTrigger: "entryDelay"`: show Alarm triggered only once an intrusion has outlasted the entry
+  delay without a disarm, instead of as soon as ecobee opens the incident. Smoke still shows at once.
+- The hold API refuses a hold while any alarm incident is open, whichever `alarmTrigger` is set.
+
 ## 0.3.0
 
 - Sign in from the plugin's settings page in the Homebridge UI with your ecobee email, password

@@ -55,11 +55,18 @@ node <plugin folder>/bin/ecobee-login.js --browser  # website sign-in
   "name": "Security System",
   "refreshToken": "…",
   "pollInterval": 10,
+  "offerNight": false,
+  "alarmTrigger": "incident",
   "_bridge": { "username": "…", "port": 51926, "name": "Ecobee Security Bridge" }
 }
 ```
 
 `homeId` is only needed if the account has several homes (the log lists them).
+
+| Setting | Default | |
+|---|---|---|
+| `offerNight` | `false` | Adds Night to the Home app. ecobee has no Night mode, so Night arms Stay and the tile keeps showing Night until the state changes (a Stay armed elsewhere shows as Stay). |
+| `alarmTrigger` | `"incident"` | When the tile shows **Alarm triggered**: `"incident"` as soon as ecobee opens an incident, which happens the moment a door or sensor trips while armed, during the entry delay (like the ecobee app); `"entryDelay"` only once that has lasted the entry delay without a disarm, so automations don't fire while you're disarming. Smoke alarms always show at once. |
 
 ## How it behaves
 
@@ -68,13 +75,11 @@ node <plugin folder>/bin/ecobee-login.js --browser  # website sign-in
   (0 by default). Disarm needs no PIN.
 - **Changes from elsewhere** (ecobee app, keypad, ecobee automations) show up within the poll
   interval (10 s by default), and quickly after an exit delay ends.
-- **Alarm triggered** while ecobee lists an incident whose status isn't resolved/closed/cancelled.
-  ecobee opens an incident as soon as a door opens while armed, during the entry delay, so the
-  tile shows Alarm triggered from that moment, as the ecobee app does; disarming clears it.
-  Every change in the incident list is logged.
+- **Alarm triggered** while ecobee lists an open incident (see `alarmTrigger` above for when it
+  starts showing). Disarming clears it. Every change in the incident list is logged.
 - **Siri** calls Stay "Home": "set the security system to Home". Saying "arm … for stay" makes
   Siri pick Away.
-- **Night** isn't offered; ecobee has no Night mode.
+- **Night** is only offered with `offerNight`; ecobee has no Night mode of its own.
 - After three failed reads in a row the accessory shows a fault; reads back off up to 5 minutes.
 - **Hold for other plugins:** a Unix socket at `<homebridge storage>/ecobee-security/control.sock`
   (mode 600, homebridge user only) lets another plugin, e.g. homebridge-narwal, ask for a temporary

@@ -32,6 +32,32 @@
         "default": 10,
         "minimum": 5,
         "description": "How often to read the armed state, so changes made in the ecobee app or at the keypad show up in Apple Home."
+      },
+      "offerNight": {
+        "title": "Offer Night",
+        "type": "boolean",
+        "default": false,
+        "description": "Adds Night to the Home app, for automations or Siri that use it. ecobee has no Night mode, so Night arms Stay; the Home app keeps showing Night until the state changes."
+      },
+      "alarmTrigger": {
+        "title": "Show \"Alarm triggered\"",
+        "type": "string",
+        "default": "incident",
+        "oneOf": [
+          {
+            "title": "As soon as ecobee opens an incident, during the entry delay (like the ecobee app)",
+            "enum": [
+              "incident"
+            ]
+          },
+          {
+            "title": "Only once the entry delay runs out without a disarm",
+            "enum": [
+              "entryDelay"
+            ]
+          }
+        ],
+        "description": "ecobee opens an incident as soon as a door or sensor trips while armed. The second option waits out the entry delay, so automations on Alarm triggered don't fire while you're disarming. Smoke alarms always show at once."
       }
     }
   }

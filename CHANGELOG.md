@@ -8,6 +8,9 @@
   Stay with it turned on; otherwise `/hold` and `/release` answer 403 with the reason, and a hold
   left over from before is dropped without re-arming Away. **If you use homebridge-narwal-freo's
   security hold, turn this on.**
+- Hold and release decide on ecobee's live state, read at the moment of the request, not the last
+  poll: a disarm in the ecobee app seconds before a robot finishes is no longer armed over with
+  Away. If ecobee can't be read, a hold is refused and a release doesn't arm (the caller retries).
 
 ## 0.4.2
 

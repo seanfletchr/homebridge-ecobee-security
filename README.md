@@ -99,8 +99,11 @@ node <plugin folder>/bin/ecobee-login.js --browser  # website sign-in
   Stay and remembers who asked; `POST /release?by=<name>` arms Away again once **every** holder has
   released (with two robots out, the first one back doesn't re-arm), unless the state was changed by
   anyone in between, in which case the hold is just dropped. The hold survives restarts (in
-  `state.json`). `/hold` answers `ok: false` with a `reason` when the alarm is triggered or the state
-  is unknown; with `allowHolds` off, both paths answer 403. In the other plugin, use this socket path
+  `state.json`). The plugin, not the caller, decides: the only change a hold can make is Away → Stay
+  and, when the last holder releases, back to Away, both read from ecobee's live state at that
+  moment. Any change by someone else during the hold (disarm, arm Away, Home app, alarm) cancels the
+  re-arm. `/hold` answers `ok: false` with a `reason` when an alarm incident is open or the state
+  can't be read, and `/release` answers an error (without arming) if the state can't be read; with `allowHolds` off, both paths answer 403. In the other plugin, use this socket path
   as its security endpoint (homebridge-narwal-freo does by default).
 
 ## API notes

@@ -77,8 +77,7 @@ node <plugin folder>/bin/ecobee-login.js --browser  # website sign-in
   interval (10 s by default), and quickly after an exit delay ends.
 - **Alarm triggered** while ecobee lists an open incident (see `alarmTrigger` above for when it
   starts showing). Disarming clears it. Every change in the incident list is logged.
-- **Siri** calls Stay "Home": "set the security system to Home". Saying "arm … for stay" makes
-  Siri pick Away.
+- **Siri:** the Home app calls Stay "Home". Asking Siri for Home or for Stay mode both arm Stay.
 - **Night** is only offered with `offerNight`; ecobee has no Night mode of its own.
 - After three failed reads in a row the accessory shows a fault; reads back off up to 5 minutes.
 - **Hold for other plugins:** a Unix socket at `<homebridge storage>/ecobee-security/control.sock`

@@ -127,7 +127,9 @@ turn on **Allow security holds** in the settings; turning it off drops a hold le
 - **A plugin that never releases leaves the system in Stay** until you change it.
 
 **API** (for plugin authors): a Unix socket at `<homebridge storage>/ecobee-security/control.sock`
-(mode 600, homebridge user only; homebridge-narwal-freo uses it by default).
+(mode 600, homebridge user only), declared in `package.json` as
+`"homebridge-security-hold": { "socket": "ecobee-security/control.sock" }` so plugins that support
+holds, like homebridge-narwal-freo, can list it.
 
 - `POST /hold?by=<name>` → `{ "ok": true, "held": true|false, "state": "…" }`, or `"ok": false`
   with a `"reason"`: don't start.

@@ -41,5 +41,8 @@
   ],
   "dependencies": {
     "@homebridge/plugin-ui-utils": "^2.2.6"
+  },
+  "homebridge-security-hold": {
+    "socket": "ecobee-security/control.sock"
   }
 }

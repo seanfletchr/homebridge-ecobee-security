@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Declares the hold socket in package.json (`"homebridge-security-hold": { "socket": … }`), so
+  plugins that support the hold, like homebridge-narwal-freo, list it in their settings.
 - Hold API: several plugins (e.g. two robot vacuums) can hold Stay at once; Away comes back only
   when the last one releases. `/release` answers `waiting: [names]` while others still hold.
 - New setting **Allow security holds** (`allowHolds`, off by default): other plugins can only hold

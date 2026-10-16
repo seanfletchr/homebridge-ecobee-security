@@ -95,17 +95,42 @@ node <plugin folder>/bin/ecobee-login.js --browser  # website sign-in
 
 ## Security holds
 
-A security hold lets another Homebridge plugin, such as a robot vacuum, keep the motion sensors from
-going off while it moves around the house when you're away. The plugin can only *ask*; this plugin
-decides, by four rules:
+A security hold lets another Homebridge plugin, such as a robot vacuum, keep the system from arming
+Away while it moves around the house, so the motion sensors don't catch it. The plugin can only
+*ask*; this plugin decides, by these rules:
 
-1. **Hold:** if the system is armed Away (or arming Away), it's switched to Stay. If an alarm is in
-   progress, or ecobee can't be read, the hold is refused. Otherwise nothing changes.
+1. **Hold:** if the system is armed Away (or arming Away) when a plugin starts, it's switched to Stay.
+   If an alarm is in progress, or ecobee can't be read, the hold is refused. Otherwise nothing
+   changes. Holds are about Away only: Stay and Night are never held back.
 2. **Release:** once **every** plugin that asked is done, and the system is still in Stay, it's
    armed Away again (with the normal exit delay).
-3. **Your change wins:** anything someone else does during a hold — disarm, arm Away, a change in
-   the Home app, an alarm — cancels it, and the system is left as it is.
-4. **No timers:** nothing changes unless a plugin asks or you act.
+3. **Away while a plugin is out** (held or not):
+   - Away from the **Home app** (a scene, automation, Siri or the tile; say, a Goodnight scene run
+     from a hotel while the robot cleans) waits until the plugin is done: the hold is kept (or
+     started), Stay meanwhile, and the release arms Away. The tile shows Arming Away while it waits.
+     It always waits: HomeKit relays requests through the home hub without saying who asked, so
+     two people's bedtime automations look the same as one person asking twice.
+   - The **Arm Away Now** switch (setting **Arm Away Now switch**, `armAwayNowSwitch`, in the
+     Security holds section) is the way to mean it: it arms Away now (with the normal exit delay)
+     and asks the plugins that are out to head back or stop, then turns itself off. Use it from the Home app,
+     Siri ("turn on Arm Away Now") or a scene.
+   - Away from the **ecobee app or the keypad** can't be refused, so the plugin is asked to head
+     back or stop.
+
+   The request says when the exit delay ends (the delay set in the ecobee app): a robot that can be
+   back at its base before then heads back, and one that can't, or isn't back in time, pauses where
+   it is, so it doesn't set off a motion sensor. To give robots time, the countdown is extended by
+   **Extra time for robots to get home** (`robotReturnSeconds`, default 120 s, 0 = off) and ends as
+   soon as they're back, but never earlier than it would have. When the exit delay isn't known (a keypad Away, see
+   below), it pauses right away. A robot that moves again (you resume it) asks for a new hold.
+4. **Several requests:** they're handled one at a time, and the latest one from the Home app wins:
+   Stay, Night or Disarm there drop the hold and any waiting Away, and the system is left as you
+   set it. A second plugin that asks joins the hold, and Away comes back only when the last one has
+   released. Changes in the ecobee app or at the keypad are seen on the next poll (within 10 s):
+   they cancel the hold the same way.
+5. **No timers on this side:** nothing changes unless a plugin asks or you act. (A plugin may
+   release on its own: homebridge-narwal-freo releases when its robot has stood still off its base
+   for 10 minutes.)
 
 Every decision uses ecobee's state read at that moment, not the last poll. Holds are off until you
 turn on **Allow security holds** in the settings' **Security holds** section and tick each plugin that
@@ -115,13 +140,20 @@ Turning holds off drops a hold left over from before (without arming Away).
 
 **Limits** that follow from these rules:
 
+- **Stay and Night aren't held back.** Holds only keep Away off. If Home mode in your ecobee setup
+  watches motion sensors on the robot's route, holds don't cover that, and holding Stay back
+  would leave doors and windows unwatched.
+- **A keypad Away can't be seen coming.** An Away countdown started at the keypad isn't visible to
+  ecobee's cloud (neither the API nor the ecobee app shows it), so the plugin only sees it once Away
+  is armed and then pauses the robot on the next poll: up to about 10 seconds in which a motion sensor
+  could still catch it. Away from the ecobee app is seen during its exit delay, in time to send the
+  robot back to its base.
 - **Your own Stay looks like the hold's Stay.** If you disarm and re-arm Stay in the ecobee app or at
   the keypad within a few seconds (between two reads), or while the bridge is restarting, the
   release still arms Away: ecobee doesn't say who last changed the state. Changes in the Home app are
   always seen.
-- **Your change wins even with a robot still out.** After you cancel a hold (say, disarm), arming
-  Away while the robot is still cleaning can set off the motion sensors: a plugin only asks for a
-  hold when it starts.
+- **Stopping takes a plugin that supports it.** A plugin that doesn't give a halt endpoint (see the
+  API) can't be stopped; the log says so, and its robot may set off the motion sensors.
 - **Plugins identify themselves.** Any plugin running as the homebridge user can reach the socket,
   and the plugin name it gives is its own claim: the list keeps honest plugins apart, it isn't a
   lock. Two requests with the same name share one hold.
@@ -134,11 +166,17 @@ holds, like homebridge-narwal-freo, can list it. Plugins that ask for holds can 
 `"homebridge-security-hold": { "client": true }` to show up in the list before their first request.
 The full API: [Security hold](https://github.com/seanfletchr/homebridge-narwal-freo/blob/main/docs/security-hold.md).
 
-- `POST /hold?by=<name>&plugin=<package>` → `{ "ok": true, "held": true|false, "state": "…" }`,
+- `POST /hold?by=<name>&plugin=<package>&halt=<endpoint>` → `{ "ok": true, "held": true|false, "state": "…" }`,
   or `"ok": false` with a `"reason"`: don't start. `plugin` is optional; without it the plugin is
-  listed (and allowed) under its `by` name.
+  listed (and allowed) under its `by` name. `halt` (optional) is a Unix socket path or http(s) URL
+  where the plugin answers `POST /halt?by=<name>&armAt=<ISO time>` → `{ "halted": true|false,
+  "returning": true|false, "reason": "…" }`; it's called when the system is armed Away while the robot
+  is out. `armAt` is when the motion sensors arm (the end of the exit delay; left out when it isn't
+  known): the plugin should have its robot back at its base by then (`returning`) or stopped where it
+  is; without `armAt`, stop it now. A plugin counts as out from its first `ok` hold until it releases, held or not.
 - `POST /release?by=<name>&plugin=<package>` → `{ "released": true|false, "state": "…", "waiting": [names] }`;
-  `waiting` lists holders still out.
+  `waiting` lists holders still out. A robot that answered a halt with `"returning": true` sends it
+  once it's back at its base, or has stopped, so an extended exit delay can end.
 - With `allowHolds` off or the plugin not ticked, both answer 403 (a release from a current holder
   is always accepted); if ecobee can't be read (release) or isn't connected
   yet, a 5xx with `"error"` — try again later. Holds survive restarts (in `state.json`).

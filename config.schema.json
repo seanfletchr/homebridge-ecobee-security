@@ -3,7 +3,7 @@
   "pluginType": "platform",
   "singular": true,
   "customUi": true,
-  "headerDisplay": "Shows ecobee Smart Security as a security system in Apple Home (arm Stay / Away, disarm, alarm state). Unofficial: uses the same ecobee cloud as the app.",
+  "headerDisplay": "Adds ecobee Smart Security to Apple Home: arm Stay or Away, disarm, and see alarms. Unofficial. It uses the same ecobee cloud as the ecobee app.",
   "schema": {
     "type": "object",
     "properties": {
@@ -19,18 +19,18 @@
         "x-schema-form": {
           "type": "password"
         },
-        "description": "Filled in when you sign in above. Only needed again if ecobee signs the plugin out (password change, 'sign out everywhere')."
+        "description": "Filled in when you sign in. You only need a new one if ecobee signs the plugin out, for example after a password change."
       },
       "homeId": {
         "title": "Home ID",
         "type": "string",
-        "description": "Only needed if the account has more than one home; the log lists them."
+        "description": "Only needed if your account has more than one home. The log lists your homes."
       },
       "offerNight": {
         "title": "Offer Night",
         "type": "boolean",
         "default": false,
-        "description": "Adds the Night setting for more specific automations. ecobee has no \"Night\" mode, so Night arms Stay. Changing this recreates the security system in the Home app; scenes and automations using it must be set up again."
+        "description": "Adds a Night mode to use in automations. ecobee has no Night mode, so Night arms Stay. Changing this recreates the security system in the Home app, so you need to set up its scenes and automations again."
       },
       "alarmTrigger": {
         "title": "Enter Triggered State",
@@ -44,25 +44,25 @@
             ]
           },
           {
-            "title": "After the Entry/Disarm delay",
+            "title": "After the entry delay",
             "enum": [
               "entryDelay"
             ]
           }
         ],
-        "description": "ecobee opens an incident as soon as a door or sensor trips while armed. \"After the Entry/Disarm delay\" waits until that delay runs out without a disarm, so automations on Triggered don't fire while you're walking in to disarm. Smoke alarms always trigger immediately."
+        "description": "Immediately: as soon as a door or sensor trips while armed, like the ecobee app. After the entry delay: only if no one disarms in time, so automations don't run while you walk in. Smoke alarms always trigger immediately."
       },
       "smokeSensor": {
         "title": "Smoke sensor",
         "type": "boolean",
         "default": true,
-        "description": "Adds a separate \"Smoke Alarm\" accessory to the Home app that detects smoke whenever ecobee reports a smoke-alarm incident, so you can use it in automations and get Home app smoke notifications."
+        "description": "Adds a Smoke Alarm accessory that detects smoke when ecobee reports a smoke alarm. Use it for Home app notifications and automations."
       },
       "allowHolds": {
         "title": "Allow security holds",
         "type": "boolean",
         "default": false,
-        "description": "Lets other Homebridge plugins (for example a robot vacuum, so it can clean while you're away) switch Away to Stay for a while and back to Away when they're done. Each plugin also has to be allowed in holdPlugins (the settings page lists the ones that asked). See \"Security holds\" in the README."
+        "description": "Lets other Homebridge plugins, like a robot vacuum, keep the system from arming Away while they work: if it's armed Away it's switched to Stay, and Away comes back when they're done. Away asked for in the Home app meanwhile waits until they're done. Each plugin also has to be allowed in holdPlugins (the settings page lists the ones that asked). See \"Security holds\" in the README."
       },
       "holdPlugins": {
         "title": "Plugins allowed to ask for holds",
@@ -70,20 +70,34 @@
         "items": {
           "type": "string"
         },
-        "description": "Package names (or, for a plugin that doesn't say, the name it asks with). Without this list, every plugin may ask once Allow security holds is on."
+        "description": "Package names of the plugins that may ask, or the name a plugin asks with if it gives no package. With no list, all plugins may ask while Allow security holds is on."
+      },
+      "armAwayNowSwitch": {
+        "title": "Arm Away Now switch",
+        "type": "boolean",
+        "default": false,
+        "description": "Adds an Arm Away Now switch to the Home app (with Allow security holds on). Turning it on arms Away now, with the normal exit delay, and sends any robots that are out back to their base (a robot that can't make it in time stops where it is). Away from the security tile, scenes, automations and Siri waits until robots are done instead."
+      },
+      "robotReturnSeconds": {
+        "title": "Extra time for robots to get home (seconds)",
+        "type": "integer",
+        "default": 120,
+        "minimum": 0,
+        "maximum": 300,
+        "description": "If Away is armed while a robot is out, the countdown waits up to this much longer for it to get back to its base, and arms as soon as it's docked. 0: no waiting."
       },
       "airQuality": {
         "title": "Air quality sensors",
         "type": "boolean",
         "default": true,
-        "description": "For ecobee thermostats with an air quality sensor (ecobee Premium): adds an Air Quality Sensor (overall level and VOC) and a Carbon Dioxide Sensor (CO2 in ppm) per thermostat. ecobee's own HomeKit integration doesn't show these. Updated every 5 minutes."
+        "description": "Adds 2 sensors for each ecobee Premium thermostat: air quality (with VOC) and CO2. ecobee's own HomeKit integration doesn't include them. Updates every 5 minutes."
       },
       "co2Alert": {
         "title": "CO2 alert level (ppm)",
         "type": "integer",
         "default": 1000,
         "minimum": 400,
-        "description": "The Carbon Dioxide Sensor reports abnormal CO2 at or above this level, for Home app notifications and automations (for example, turning on ventilation).",
+        "description": "At or above this level, the CO2 sensor reports abnormal CO2. Use it for notifications and automations, like turning on ventilation.",
         "condition": {
           "functionBody": "return model.airQuality !== false;"
         }

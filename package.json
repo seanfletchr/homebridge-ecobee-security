@@ -1,7 +1,7 @@
 {
   "name": "homebridge-ecobee-security",
   "displayName": "ecobee Smart Security",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "ecobee Smart Security as a HomeKit security system: arm Stay / Away, disarm, alarm state (unofficial, ecobee cloud)",
   "type": "module",
   "main": "index.js",

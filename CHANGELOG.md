@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.6.0
+
+- Security holds now keep Away off while a plugin (a robot vacuum) works, instead of just switching
+  Away to Stay. A plugin counts as out from its first hold until it releases, even if nothing was held.
+- Away from the Home app (a scene, automation, Siri or the tile) while a robot is out waits for it:
+  the hold is kept (or started), Stay meanwhile, and the release arms Away; the tile shows Arming
+  Away while it waits. Stay, Night and Disarm in the Home app, and an alarm, still cancel the hold
+  and the waiting Away.
+- New setting **Arm Away Now switch** (`armAwayNowSwitch`, in Security holds, off by default): adds
+  an Arm Away Now switch to the Home app that arms Away now and sends any robots that are out back to
+  their base.
+- Away armed in the ecobee app or at the keypad while a robot is out asks the robot to head back to
+  its base before the exit delay ends, or to stop where it is if it can't make it. Plugins give a halt
+  endpoint with their hold request (`&halt=`), and the request says when the exit delay ends
+  (`&armAt=`; left out for a keypad Away, which is only seen once armed: the robot stops at once). A
+  robot that moves again asks for a new hold.
+- New setting **Extra time for robots to get home** (`robotReturnSeconds`, default 120, 0 = off):
+  when Away is armed from the ecobee app or the Arm Away Now switch while a robot is out, the exit
+  delay is extended by this much while robots head back to their base, and brought forward again once
+  they're docked (never earlier than it would have ended). A robot says it's docked, or stopped, with
+  `/release`; robots answer the halt with `returning: true` when they head back.
+
 ## 0.5.0
 
 - The `pollInterval` setting is gone: the security state is read every 10 s, as often as the ecobee
@@ -28,35 +50,7 @@
 
 ## 0.4.1
 
+First public release.
+
 - Plugin icon in the README.
 - Catch and log errors creating the storage folder or control socket instead of stopping the bridge.
-
-## 0.4.0
-
-- `offerNight`: adds Night to the Home app; it arms ecobee's Stay and keeps showing Night. Changing
-  the setting recreates the security system in HomeKit (the Home app doesn't pick up new modes on an
-  existing control).
-- `alarmTrigger: "entryDelay"`: show Alarm triggered only once an intrusion has outlasted the entry
-  delay without a disarm, instead of as soon as ecobee opens the incident. Smoke still shows at once.
-- `smokeSensor` (on by default): a separate Smoke Alarm accessory that detects smoke while ecobee has a smoke-alarm
-  incident open.
-- Air quality (`airQuality`, on by default): for ecobee thermostats with an air quality sensor, an
-  Air Quality Sensor (level, VOC) and a Carbon Dioxide Sensor (ppm, alert at `co2Alert`, 1000 ppm).
-- The accessory reports the plugin version as its firmware version.
-- The hold API refuses a hold while any alarm incident is open, whichever `alarmTrigger` is set.
-
-## 0.3.0
-
-- Sign in from the plugin's settings page in the Homebridge UI with your ecobee email, password
-  and MFA code. No terminal or browser developer tools needed; the website sign-in is still there
-  as a fallback.
-- `bin/ecobee-login.js` signs in with email and password by default; `--browser` for the old way.
-
-## 0.2.0
-
-- Control socket (`control.sock`) so other plugins can hold the system at Stay and release it to
-  Away afterwards (used by homebridge-narwal while the robot vacuum cleans).
-
-## 0.1.0
-
-- First release: arm Stay / Away, disarm and alarm state in Apple Home, browser sign-in script.

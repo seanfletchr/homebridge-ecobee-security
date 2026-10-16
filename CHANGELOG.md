@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Settings: the whole page is now cards (account, Security system, Sensors, Security holds), with
+  **Security holds** at the bottom; the standard settings form is no longer shown.
 - Settings: a **Security holds** section with the **Allow security holds** switch and a checkbox per
   plugin (`holdPlugins`): installed plugins that declare they use holds, and any that asked. Hold
   requests can name their plugin (`&plugin=<package>`); unticked plugins are refused.

@@ -96,16 +96,5 @@
         }
       }
     }
-  },
-  "layout": [
-    "name",
-    "refreshToken",
-    "homeId",
-    "pollInterval",
-    "offerNight",
-    "alarmTrigger",
-    "smokeSensor",
-    "airQuality",
-    "co2Alert"
-  ]
+  }
 }

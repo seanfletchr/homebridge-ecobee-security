@@ -57,6 +57,60 @@
 </div>
 
 
+<div class="card card-body mb-3" id="system-card" hidden>
+  <h5 class="mb-3">Security system</h5>
+  <div class="mb-3">
+    <label for="s-name" class="form-label">Name</label>
+    <input class="form-control" type="text" id="s-name" data-key="name" data-type="text" data-default="Security System">
+    <div class="hint mt-1">Name shown in the Home app.</div>
+  </div>
+  <div class="mb-3">
+    <label for="s-homeId" class="form-label">Home ID</label>
+    <input class="form-control" type="text" id="s-homeId" data-key="homeId" data-type="text" data-default="">
+    <div class="hint mt-1">Only needed if the account has more than one home; the log lists them.</div>
+  </div>
+  <div class="mb-3">
+    <label for="s-pollInterval" class="form-label">Check every (seconds)</label>
+    <input class="form-control" type="number" step="1" min="5" id="s-pollInterval" data-key="pollInterval" data-type="int" data-default="10">
+    <div class="hint mt-1">How often to read the armed state, so changes made in the ecobee app or at the keypad show up in Apple Home.</div>
+  </div>
+  <div class="mb-3">
+    <div class="form-check form-switch">
+      <input class="form-check-input" type="checkbox" role="switch" id="s-offerNight" data-key="offerNight" data-type="bool" data-default="false">
+      <label class="form-check-label" for="s-offerNight">Offer Night</label>
+    </div>
+    <div class="hint">Adds Night to the Home app, for automations or Siri that use it. ecobee has no Night mode, so Night arms Stay; the Home app keeps showing Night until the state changes. Changing this setting recreates the security system in the Home app, so scenes and automations that use it have to be set up again.</div>
+  </div>
+  <div class="mb-0">
+    <label for="s-alarmTrigger" class="form-label">Enter Triggered State</label>
+    <select class="form-select" id="s-alarmTrigger" data-key="alarmTrigger" data-type="select" data-default="incident"><option value="incident">Immediately (mirror ecobee app)</option><option value="entryDelay">After the Entry/Disarm delay</option></select>
+    <div class="hint mt-1">ecobee opens an incident as soon as a door or sensor trips while armed. "After the Entry/Disarm delay" waits until that delay runs out without a disarm, so automations on Triggered don't fire while you're walking in to disarm. Smoke alarms always trigger immediately.</div>
+  </div>
+</div>
+
+<div class="card card-body mb-3" id="sensors-card" hidden>
+  <h5 class="mb-3">Sensors</h5>
+  <div class="mb-3">
+    <div class="form-check form-switch">
+      <input class="form-check-input" type="checkbox" role="switch" id="s-smokeSensor" data-key="smokeSensor" data-type="bool" data-default="true">
+      <label class="form-check-label" for="s-smokeSensor">Smoke sensor</label>
+    </div>
+    <div class="hint">Adds a separate "Smoke Alarm" accessory to the Home app that detects smoke whenever ecobee reports a smoke-alarm incident, so you can use it in automations and get Home app smoke notifications.</div>
+  </div>
+  <div class="mb-3">
+    <div class="form-check form-switch">
+      <input class="form-check-input" type="checkbox" role="switch" id="s-airQuality" data-key="airQuality" data-type="bool" data-default="true">
+      <label class="form-check-label" for="s-airQuality">Air quality sensors</label>
+    </div>
+    <div class="hint">For ecobee thermostats with an air quality sensor (ecobee Premium): adds an Air Quality Sensor (overall level and VOC) and a Carbon Dioxide Sensor (CO2 in ppm) per thermostat. ecobee's own HomeKit integration doesn't show these. Updated every 5 minutes.</div>
+  </div>
+  <div class="mb-0" id="co2-box">
+    <label for="s-co2Alert" class="form-label">CO2 alert level (ppm)</label>
+    <input class="form-control" type="number" step="1" min="400" id="s-co2Alert" data-key="co2Alert" data-type="int" data-default="1000">
+    <div class="hint mt-1">The Carbon Dioxide Sensor reports abnormal CO2 at or above this level, for Home app notifications and automations (for example, turning on ventilation).</div>
+  </div>
+</div>
+
 <div class="card card-body mb-3" id="holds-card" hidden>
   <h5 class="mb-2">Security holds</h5>
   <div class="form-check form-switch mb-1">
@@ -71,6 +125,7 @@
     <div id="hold-plugins"></div>
   </div>
 </div>
+
 <script>
 (async () => {
   const PLATFORM = 'EcobeeSecurityPlatform';
@@ -115,11 +170,8 @@
     const blocks = await homebridge.getPluginConfig();
     const block = blocks[0] ?? { platform: PLATFORM, name: 'Security System' };
     block.refreshToken = refreshToken;
-    // Re-show the settings form afterwards so it picks up the new token.
-    homebridge.hideSchemaForm();
     await homebridge.updatePluginConfig([block, ...blocks.slice(1)]);
     await homebridge.savePluginConfig();
-    homebridge.showSchemaForm();
     passwordForm.reset();
     mfaForm.reset();
     passwordForm.hidden = false;
@@ -128,6 +180,7 @@
     $('browser').open = false;
     homebridge.toast.success('Signed in to ecobee.');
     await showStatus({ justSignedIn: true });
+    await showSettings();
     await showHolds();
   }
 
@@ -193,6 +246,58 @@
   });
 
 
+  // ── Settings cards ──
+
+  const controls = [...document.querySelectorAll('[data-key]')];
+
+  /** Fill the cards from the config; show defaults where nothing is set. */
+  async function showSettings() {
+    const [block] = await homebridge.getPluginConfig();
+    const signedIn = Boolean(block?.refreshToken);
+    $('system-card').hidden = !signedIn;
+    $('sensors-card').hidden = !signedIn;
+    for (const input of controls) {
+      const value = block?.[input.dataset.key];
+      if (input.dataset.type === 'bool') {
+        input.checked = value ?? input.dataset.default === 'true';
+      } else {
+        input.value = value ?? input.dataset.default;
+      }
+    }
+    $('co2-box').hidden = block?.airQuality === false;
+  }
+
+  /** Write one setting. Top-level keys are cleared with undefined, never deleted (the UI merges shallowly). */
+  async function setSetting(key, value) {
+    const blocks = await homebridge.getPluginConfig();
+    const block = blocks[0] ?? { platform: PLATFORM, name: 'Security System' };
+    block[key] = value;
+    await homebridge.updatePluginConfig([block, ...blocks.slice(1)]);
+  }
+
+  for (const input of controls) {
+    input.addEventListener('change', async () => {
+      const { key, type } = input.dataset;
+      if (type === 'bool') {
+        await setSetting(key, input.checked);
+        if (key === 'airQuality') {
+          $('co2-box').hidden = !input.checked;
+        }
+      } else if (type === 'int') {
+        const number = input.value.trim() === '' ? undefined : Number(input.value);
+        const valid = number === undefined || (Number.isInteger(number) && number >= Number(input.min));
+        input.classList.toggle('is-invalid', !valid);
+        if (valid) {
+          await setSetting(key, number);
+        }
+      } else if (type === 'select') {
+        await setSetting(key, input.value);
+      } else {
+        await setSetting(key, input.value.trim() === '' ? undefined : input.value.trim());
+      }
+    });
+  }
+
   // ── Security holds ──
 
   async function showHolds() {
@@ -250,7 +355,7 @@
   });
 
   await showStatus();
+  await showSettings();
   await showHolds();
-  homebridge.showSchemaForm();
 })();
 </script>

@@ -3,10 +3,10 @@
 ## 0.6.0
 
 - Security holds now keep Away off while a plugin (a robot vacuum) works, instead of just switching
-  Away to Stay. A plugin counts as out from its first hold until it releases, even if nothing was held.
+  Away to Home (ecobee's Stay). A plugin counts as out from its first hold until it releases, even if nothing was held.
 - Away from the Home app (a scene, automation, Siri or the tile) while a robot is out waits for it:
-  the hold is kept (or started), Stay meanwhile, and the release arms Away; the tile shows Arming
-  Away while it waits. Stay, Night and Disarm in the Home app, and an alarm, still cancel the hold
+  the hold is kept (or started), Home meanwhile, and the release arms Away; the tile shows Arming
+  Away while it waits. Home, Night and Off in the Home app, and an alarm, still cancel the hold
   and the waiting Away.
 - New setting **Arm Away Now switch** (`armAwayNowSwitch`, in Security holds, off by default): adds
   an Arm Away Now switch to the Home app that arms Away now and sends any robots that are out back to

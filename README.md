@@ -2,8 +2,9 @@
 
 # homebridge-ecobee-security
 
-Shows **ecobee Smart Security** in Apple Home as a security system: arm **Stay**, arm **Away**,
-**disarm**, and **Alarm triggered** when ecobee has an open intrusion or smoke incident. It also adds
+Shows **ecobee Smart Security** in Apple Home as a security system: set it to **Home**, **Away** or
+**Off** (ecobee's Stay, Away and disarmed), and see **Alarm triggered** when ecobee has an open
+intrusion or smoke incident. It also adds
 **air quality** sensors for ecobee thermostats that have one (ecobee Premium), which ecobee's own
 HomeKit integration leaves out. Works with
 Siri ("set the security system to away") and Home automations. ecobee removed Smart Security from
@@ -72,7 +73,7 @@ node <plugin folder>/bin/ecobee-login.js --browser  # website sign-in
 
 | Setting | Default | |
 |---|---|---|
-| `offerNight` | `false` | Adds Night to the Home app. ecobee has no Night mode, so Night arms Stay and the tile keeps showing Night until the state changes (a Stay armed elsewhere shows as Stay). HomeKit only picks up a changed list of modes on a new control, so changing this setting recreates the security system in the Home app: set up scenes and automations that use it again. |
+| `offerNight` | `false` | Adds Night to the Home app. ecobee has no Night mode, so Night arms ecobee's Stay, and the tile keeps showing Night until the state changes (Stay armed in the ecobee app or at the keypad shows as Home). HomeKit only picks up a changed list of modes on a new control, so changing this setting recreates the security system in the Home app: set up scenes and automations that use it again. |
 | `alarmTrigger` | `"incident"` | When the tile enters **Triggered**: `"incident"` immediately, when ecobee opens an incident as a door or sensor trips while armed (mirrors the ecobee app); `"entryDelay"` only after the entry (disarm) delay runs out without a disarm. Smoke alarms always trigger immediately. |
 | `smokeSensor` | `true` | Adds a separate **Smoke Alarm** accessory (a Smoke Sensor) that detects smoke while ecobee has a smoke-alarm incident open, for automations and Home app smoke notifications. Set to `false` to remove it. |
 | `allowHolds` | `false` | Lets other plugins, like a robot vacuum, keep the system from arming Away while their task runs (see [Security holds](#security-holds)). |
@@ -85,13 +86,13 @@ node <plugin folder>/bin/ecobee-login.js --browser  # website sign-in
 ## How it behaves
 
 - **Arm Away** uses ecobee's Away exit delay (60 s by default), just like the app. During the
-  delay the Home app shows "Arming…" (current Disarmed, target Away). Stay uses the Stay exit delay
-  (0 by default). Disarm needs no PIN.
+  delay the Home app shows "Arming…" (current Off, target Away). Home and Night use ecobee's Stay
+  exit delay (0 by default). Off needs no PIN.
 - **Changes from elsewhere** (ecobee app, keypad, ecobee automations) show up within 10 s, about
   as fast as in the ecobee app (it polls too), and quickly after an exit delay ends.
 - **Alarm triggered** while ecobee lists an open incident (see `alarmTrigger` above for when it
   starts showing). Disarming clears it. Every change in the incident list is logged.
-- **Siri:** the Home app calls Stay "Home". Asking Siri for Home or for Stay mode both arm Stay.
+- **Siri:** asking for Home or for Stay mode both set Home (ecobee's Stay).
 - **Night** is only offered with `offerNight`; ecobee has no Night mode of its own.
 - After three failed reads in a row the accessory shows a fault; reads back off up to 5 minutes.
 - **Security holds** let other plugins, like a robot vacuum, keep the system from arming Away while they work: see below.
@@ -100,8 +101,8 @@ node <plugin folder>/bin/ecobee-login.js --browser  # website sign-in
 
 Things that move while you're out set off ecobee's motion sensors: a robot vacuum cleaning, or an AC
 blowing plants around in front of a sensor. **Security holds** let other Homebridge plugins keep the
-system from arming **Away** while their task runs. Instead the system uses **Stay**: doors and windows
-stay armed, motion sensors don't.
+system from arming **Away** while their task runs. Instead the system is set to **Home** (Stay in the
+ecobee app): doors and windows stay armed, motion sensors don't.
 
 Plugins that support holds include
 [homebridge-narwal-freo](https://github.com/seanfletchr/homebridge-narwal-freo) (robot vacuum). Any
@@ -119,9 +120,9 @@ Using a robot vacuum as the example:
 
 | Situation | What the security system does |
 |---|---|
-| The robot starts cleaning while the system is armed **Away** | Switches to Stay, and goes back to Away when the robot is done. |
-| The robot starts while the system is in **Stay**, **Night** or **Off** | Nothing changes. |
-| You arm **Away in the Home app** while the robot is cleaning (the tile, a scene, an automation or Siri) | Stays in Stay until the robot is done, then arms Away. The tile shows "Arming…" meanwhile. |
+| The robot starts cleaning while the system is armed **Away** | Switches to Home, and goes back to Away when the robot is done. |
+| The robot starts while the system is set to **Home**, **Night** or **Off** | Nothing changes. |
+| You arm **Away in the Home app** while the robot is cleaning (the tile, a scene, an automation or Siri) | Stays in Home until the robot is done, then arms Away. The tile shows "Arming…" meanwhile. |
 | You want Away **now** | Turn on the **Arm Away Now** switch (see below). It arms Away right away and sends the robot home. |
 | You arm **Away in the ecobee app** while the robot is cleaning | Sends the robot home, and gives it up to 2 extra minutes on the countdown. It arms as soon as the robot is docked, but never earlier than your normal countdown. If the robot won't make it in time, it stops where it is before the sensors arm. |
 | You arm **Away at the keypad** while the robot is cleaning | Stops the robot where it is. ecobee doesn't report keypad countdowns, so this happens once Away is already armed: there's a window of up to 10 seconds in which a motion sensor could still catch the robot. |
@@ -153,7 +154,7 @@ In the **Security holds** section of the settings:
   notice, and will arm Away when the task is done. Changes in the Home app are always noticed.
 - **A plugin that can't be told to stop** keeps going when Away is armed at the keypad or in the
   ecobee app. The log says so.
-- **A plugin that never reports it's done** leaves the system in Stay until you change it.
+- **A plugin that never reports it's done** leaves the system in Home until you change it.
   (homebridge-narwal-freo also lets go if its robot hasn't moved for 10 minutes, e.g. when it's
   stuck.)
 - **The allowed-plugins list is a courtesy, not a lock.** Any plugin running in your Homebridge can

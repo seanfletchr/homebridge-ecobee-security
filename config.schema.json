@@ -3,7 +3,7 @@
   "pluginType": "platform",
   "singular": true,
   "customUi": true,
-  "headerDisplay": "Adds ecobee Smart Security to Apple Home: arm Stay or Away, disarm, and see alarms. Unofficial. It uses the same ecobee cloud as the ecobee app.",
+  "headerDisplay": "Adds ecobee Smart Security to Apple Home: set it to Home, Away or Off, and see alarms. Unofficial. It uses the same ecobee cloud as the ecobee app.",
   "schema": {
     "type": "object",
     "properties": {
@@ -30,7 +30,7 @@
         "title": "Offer Night",
         "type": "boolean",
         "default": false,
-        "description": "Adds a Night mode to use in automations. ecobee has no Night mode, so Night arms Stay. Changing this recreates the security system in the Home app, so you need to set up its scenes and automations again."
+        "description": "Adds a Night mode to use in automations. ecobee has no Night mode, so Night arms ecobee's Stay. Changing this recreates the security system in the Home app, so you need to set up its scenes and automations again."
       },
       "alarmTrigger": {
         "title": "Enter Triggered State",
@@ -62,7 +62,7 @@
         "title": "Allow security holds",
         "type": "boolean",
         "default": false,
-        "description": "Lets other Homebridge plugins, like a robot vacuum, keep the system from arming Away while they work: if it's armed Away it's switched to Stay, and Away comes back when they're done. Away asked for in the Home app meanwhile waits until they're done. Each plugin also has to be allowed in holdPlugins (the settings page lists the ones that asked). See \"Security holds\" in the README."
+        "description": "Lets other Homebridge plugins, like a robot vacuum, keep the system from arming Away while they work: if it's armed Away it's switched to Home (ecobee's Stay), and Away comes back when they're done. Away asked for in the Home app meanwhile waits until they're done. Each plugin also has to be allowed in holdPlugins (the settings page lists the ones that asked). See \"Security holds\" in the README."
       },
       "holdPlugins": {
         "title": "Plugins allowed to ask for holds",

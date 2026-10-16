@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7.0
+
+- New setting **Disarm when a door is unlocked with its keypad** (`keypadDisarm`, off by default,
+  in a new **Door keypads** card): entering a code on a smart lock's keypad turns the security system
+  off, like Nest Guard with a Nest × Yale lock. Works with locks from the same Homebridge that report
+  keypad unlocks (HomeKit's Lock Last Known Action, read over HAP on 127.0.0.1; needs insecure mode).
+  The settings page lists the locks found (`keypadLocks`; no list = all).
+
 ## 0.6.0
 
 - Security holds now keep Away off while a plugin (a robot vacuum) works, instead of just switching

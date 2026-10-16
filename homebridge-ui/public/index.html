@@ -107,6 +107,21 @@
   </div>
 </div>
 
+<div class="card card-body mb-3" id="keypad-card" hidden>
+  <h5 class="mb-2">Door keypads</h5>
+  <div class="form-check form-switch mb-1">
+    <input class="form-check-input" type="checkbox" role="switch" id="keypad-disarm">
+    <label class="form-check-label" for="keypad-disarm">Disarm when a door is unlocked with its keypad</label>
+  </div>
+  <p class="hint mb-2">Entering a code on a smart lock's keypad turns the security system off, so family and guests
+    can use their lock codes. Restart the bridge after changing this.
+    <a href="https://github.com/seanfletchr/homebridge-ecobee-security#keypad-unlock" target="_blank" rel="noopener">Learn more…</a></p>
+  <div id="keypad-locks-box" hidden>
+    <div class="mb-1">Locks that disarm</div>
+    <div id="keypad-locks"></div>
+  </div>
+</div>
+
 <div class="card card-body mb-3" id="holds-card" hidden>
   <h5 class="mb-2">Security holds</h5>
   <div class="form-check form-switch mb-1">
@@ -188,6 +203,7 @@
     homebridge.toast.success('Signed in to ecobee.');
     await showStatus({ justSignedIn: true });
     await showSettings();
+    await showKeypad();
     await showHolds();
   }
 
@@ -369,8 +385,63 @@
     await homebridge.updatePluginConfig([block, ...blocks.slice(1)]);
   });
 
+  // ── Door keypads ──
+
+  async function showKeypad() {
+    const [block = {}] = await homebridge.getPluginConfig();
+    $('keypad-card').hidden = !block.refreshToken;
+    $('keypad-disarm').checked = block.keypadDisarm === true;
+    $('keypad-locks-box').hidden = block.keypadDisarm !== true;
+    const locks = await homebridge.request('/keypad-locks').catch(() => []);
+    const box = $('keypad-locks');
+    box.textContent = '';
+    if (!locks.length) {
+      const p = document.createElement('p');
+      p.className = 'hint mb-0';
+      p.textContent = block.keypadDisarm === true
+        ? 'No lock found yet. Locks show up here a minute after the bridge restarts; the log says if none report keypad unlocks.'
+        : 'Turn this on and restart the bridge to find your locks.';
+      box.append(p);
+      return;
+    }
+    // Without a list, every lock disarms.
+    const allowed = Array.isArray(block.keypadLocks) ? block.keypadLocks : locks.map(l => l.key);
+    for (const lock of locks) {
+      const id = `lock-${lock.key.replace(/[^a-z0-9]/gi, '-')}`;
+      const input = Object.assign(document.createElement('input'), {
+        className: 'form-check-input', type: 'checkbox', id, checked: allowed.includes(lock.key),
+      });
+      input.addEventListener('change', () => setLock(locks, lock.key, input.checked));
+      const label = Object.assign(document.createElement('label'), { className: 'form-check-label', htmlFor: id });
+      label.textContent = lock.name;
+      const hint = Object.assign(document.createElement('div'), { className: 'hint' });
+      hint.textContent = lock.bridge;
+      const row = Object.assign(document.createElement('div'), { className: 'form-check mb-1' });
+      row.append(input, label, hint);
+      box.append(row);
+    }
+  }
+
+  async function setLock(locks, key, on) {
+    const blocks = await homebridge.getPluginConfig();
+    const block = blocks[0];
+    const current = Array.isArray(block.keypadLocks) ? block.keypadLocks : locks.map(l => l.key);
+    block.keypadLocks = on ? [...new Set([...current, key])] : current.filter(k => k !== key);
+    await homebridge.updatePluginConfig([block, ...blocks.slice(1)]);
+  }
+
+  $('keypad-disarm').addEventListener('change', async () => {
+    const blocks = await homebridge.getPluginConfig();
+    const block = blocks[0];
+    block.keypadDisarm = $('keypad-disarm').checked;
+    $('keypad-locks-box').hidden = !block.keypadDisarm;
+    await homebridge.updatePluginConfig([block, ...blocks.slice(1)]);
+    await showKeypad();
+  });
+
   await showStatus();
   await showSettings();
+  await showKeypad();
   await showHolds();
 })();
 </script>

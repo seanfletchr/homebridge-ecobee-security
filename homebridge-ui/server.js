@@ -72,6 +72,16 @@ class UiServer extends HomebridgePluginUiServer {
       return [...plugins.values()];
     });
 
+    // Locks the plugin found that report keypad unlocks (only that list leaves state.json).
+    this.onRequest('/keypad-locks', async () => {
+      try {
+        const store = JSON.parse(await readFile(join(this.homebridgeStoragePath, 'ecobee-security', 'state.json'), 'utf8'));
+        return store.keypadLocks ?? [];
+      } catch {
+        return [];
+      }
+    });
+
     this.ready();
   }
 

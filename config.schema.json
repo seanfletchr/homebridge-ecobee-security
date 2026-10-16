@@ -86,6 +86,20 @@
         "maximum": 300,
         "description": "If Away is armed while a task is running, like a robot heading back to its base, the countdown waits up to this much longer, and arms as soon as it's done. 0: no waiting."
       },
+      "keypadDisarm": {
+        "title": "Disarm when a door is unlocked with its keypad",
+        "type": "boolean",
+        "default": false,
+        "description": "Entering a code on a smart lock's keypad turns the security system off, so family and guests can use their lock codes. Works with locks in Apple Home from this Homebridge that report keypad unlocks. Needs Homebridge's insecure mode. See \"Keypad unlock\" in the README."
+      },
+      "keypadLocks": {
+        "title": "Locks that disarm",
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Serial numbers of the locks that disarm (the settings page lists the ones found). With no list, every lock does."
+      },
       "airQuality": {
         "title": "Air quality sensors",
         "type": "boolean",

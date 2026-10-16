@@ -80,6 +80,8 @@ node <plugin folder>/bin/ecobee-login.js --browser  # website sign-in
 | `holdPlugins` | all | The plugins allowed to do that; the settings page lists them. |
 | `armAwayNowSwitch` | `false` | Adds an **Arm Away Now** switch: arms Away immediately and asks any task in progress to stop (a robot goes home). |
 | `taskWaitSeconds` | `120` | How much longer the Away countdown may wait for a task to finish, e.g. a robot getting home (0: don't wait). |
+| `keypadDisarm` | `false` | Turns the security system off when a door is unlocked with a code on its keypad (see [Keypad unlock](#keypad-unlock)). |
+| `keypadLocks` | all | The locks that do that, by serial number; the settings page lists the ones found. |
 | `airQuality` | `true` | For each thermostat with an air quality sensor: an accessory "&lt;thermostat&gt; Air Quality" with an **Air Quality Sensor** (overall level; VOC as ecobee reports it, in ppb, which the Home app labels µg/m³) and a **Carbon Dioxide Sensor** (ppm). Read every 5 minutes. The level follows the ecobee app's Clean–Poor bar: its first two segments are Excellent, then Good, Fair, Inferior, Poor; Unknown while the sensor calibrates. |
 | `co2Alert` | `1000` | CO2 (ppm) at or above which the Carbon Dioxide Sensor reports abnormal levels. |
 
@@ -95,7 +97,31 @@ node <plugin folder>/bin/ecobee-login.js --browser  # website sign-in
 - **Siri:** asking for Home or for Stay mode both set Home (ecobee's Stay).
 - **Night** is only offered with `offerNight`; ecobee has no Night mode of its own.
 - After three failed reads in a row the accessory shows a fault; reads back off up to 5 minutes.
+- **Keypad unlock:** unlocking a door with its keypad can turn the system off: see below.
 - **Security holds** let other plugins, like a robot vacuum, keep the system from arming Away while they work: see below.
+
+## Keypad unlock
+
+Turn on **Disarm when a door is unlocked with its keypad** (`keypadDisarm`) and entering a code on a
+smart lock's keypad turns the security system off, like Nest Guard did with a Nest × Yale lock.
+Family and guests use their lock codes; the lock's own app decides whose code works when (guest
+schedules, expiry), so the plugin needs no codes of its own.
+
+- **Which locks:** any lock in Apple Home from the same Homebridge whose plugin reports *how* it was
+  unlocked (HomeKit's Lock Last Known Action), for example homebridge-nest-accfactory's Nest × Yale
+  locks. The settings page lists the locks found; untick the ones that shouldn't disarm. Locks
+  paired to Apple Home directly (not through Homebridge) can't be seen.
+- **Only keypad unlocks** count: not the app, Siri, automations, a key or the thumb turn. Any code
+  that opens the lock disarms, yours included.
+- **Speed:** the plugin checks the locks every second; the disarm reaches ecobee about as fast as
+  one from the Home app. How quickly the lock reports the unlock depends on the lock and its plugin. Unlock before you open the door: ecobee opens an incident
+  as soon as a door opens while armed, and the disarm clears it, as with the ecobee keypad.
+- **Locking** from the outside doesn't arm: most locks can't tell that from the thumb turn inside.
+- A disarm ends any [security hold](#security-holds), as a change from the Home app does.
+- Needs Homebridge's **insecure mode** (Homebridge Settings > Homebridge Insecure Mode / Accessory
+  Control; the Homebridge UI's accessory control uses it too): the plugin reads the locks over HAP on
+  127.0.0.1 with the bridge PIN, since each child bridge runs in its own process. The log says if
+  it isn't on.
 
 ## Security holds
 

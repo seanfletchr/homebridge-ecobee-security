@@ -58,7 +58,6 @@ node <plugin folder>/bin/ecobee-login.js --browser  # website sign-in
   "platform": "EcobeeSecurityPlatform",
   "name": "Security System",
   "refreshToken": "…",
-  "pollInterval": 10,
   "offerNight": false,
   "alarmTrigger": "incident",
   "smokeSensor": true,
@@ -85,8 +84,8 @@ node <plugin folder>/bin/ecobee-login.js --browser  # website sign-in
 - **Arm Away** uses ecobee's Away exit delay (60 s by default), just like the app. During the
   delay the Home app shows "Arming…" (current Disarmed, target Away). Stay uses the Stay exit delay
   (0 by default). Disarm needs no PIN.
-- **Changes from elsewhere** (ecobee app, keypad, ecobee automations) show up within the poll
-  interval (10 s by default), and quickly after an exit delay ends.
+- **Changes from elsewhere** (ecobee app, keypad, ecobee automations) show up within 10 s, about
+  as fast as in the ecobee app (it polls too), and quickly after an exit delay ends.
 - **Alarm triggered** while ecobee lists an open incident (see `alarmTrigger` above for when it
   starts showing). Disarming clears it. Every change in the incident list is logged.
 - **Siri:** the Home app calls Stay "Home". Asking Siri for Home or for Stay mode both arm Stay.

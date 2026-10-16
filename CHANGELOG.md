@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- The `pollInterval` setting is gone: the security state is read every 10 s, as often as the ecobee
+  app does (it has no live updates either). A value left in the config is ignored.
 - Settings: the whole page is now cards (account, Security system, Sensors, Security holds), with
   **Security holds** at the bottom; the standard settings form is no longer shown.
 - Settings: a **Security holds** section with the **Allow security holds** switch and a checkbox per

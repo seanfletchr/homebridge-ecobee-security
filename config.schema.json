@@ -26,13 +26,6 @@
         "type": "string",
         "description": "Only needed if the account has more than one home; the log lists them."
       },
-      "pollInterval": {
-        "title": "Check every (seconds)",
-        "type": "integer",
-        "default": 10,
-        "minimum": 5,
-        "description": "How often to read the armed state, so changes made in the ecobee app or at the keypad show up in Apple Home."
-      },
       "offerNight": {
         "title": "Offer Night",
         "type": "boolean",

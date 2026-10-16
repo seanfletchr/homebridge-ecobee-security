@@ -124,12 +124,12 @@
       <input class="form-check-input" type="checkbox" role="switch" id="arm-away-now">
       <label class="form-check-label" for="arm-away-now">Arm Away Now switch</label>
     </div>
-    <div class="hint">Adds a switch to the Home app that arms Away now and sends any robots that are out back to their base. Restart the
+    <div class="hint">Adds a switch to the Home app that arms Away now and asks any task that's running to stop (a robot goes back to its base). Restart the
       bridge after changing this.</div>
-    <label for="s-robotReturnSeconds" class="form-label mt-3 mb-1">Extra time for robots to get home (seconds)</label>
-    <input class="form-control" type="number" step="10" min="0" max="300" id="s-robotReturnSeconds" data-key="robotReturnSeconds" data-type="int" data-default="120">
-    <div class="hint mt-1">If Away is armed while a robot is out, the countdown waits up to this much longer for it to get
-      back to its base, and arms as soon as it's docked. 0: no waiting.</div>
+    <label for="s-taskWaitSeconds" class="form-label mt-3 mb-1">Extra time for tasks to finish (seconds)</label>
+    <input class="form-control" type="number" step="10" min="0" max="300" id="s-taskWaitSeconds" data-key="taskWaitSeconds" data-type="int" data-default="120">
+    <div class="hint mt-1">If Away is armed while a task is running, like a robot heading back to its base, the countdown
+      waits up to this much longer, and arms as soon as it's done. 0: no waiting.</div>
   </div>
 </div>
 

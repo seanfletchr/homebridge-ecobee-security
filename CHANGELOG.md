@@ -16,10 +16,10 @@
   endpoint with their hold request (`&halt=`), and the request says when the exit delay ends
   (`&armAt=`; left out for a keypad Away, which is only seen once armed: the robot stops at once). A
   robot that moves again asks for a new hold.
-- New setting **Extra time for robots to get home** (`robotReturnSeconds`, default 120, 0 = off):
-  when Away is armed from the ecobee app or the Arm Away Now switch while a robot is out, the exit
-  delay is extended by this much while robots head back to their base, and brought forward again once
-  they're docked (never earlier than it would have ended). A robot says it's docked, or stopped, with
+- New setting **Extra time for tasks to finish** (`taskWaitSeconds`, default 120, 0 = off):
+  when Away is armed from the ecobee app or the Arm Away Now switch while a task is running (like a
+  robot heading back to its base), the exit delay is extended by this much, and brought forward again
+  once the task is done (never earlier than it would have ended). A robot says it's docked, or stopped, with
   `/release`; robots answer the halt with `returning: true` when they head back.
 
 ## 0.5.0

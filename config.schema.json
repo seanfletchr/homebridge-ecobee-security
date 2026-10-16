@@ -76,15 +76,15 @@
         "title": "Arm Away Now switch",
         "type": "boolean",
         "default": false,
-        "description": "Adds an Arm Away Now switch to the Home app (with Allow security holds on). Turning it on arms Away now, with the normal exit delay, and sends any robots that are out back to their base (a robot that can't make it in time stops where it is). Away from the security tile, scenes, automations and Siri waits until robots are done instead."
+        "description": "Adds an Arm Away Now switch to the Home app (with Allow security holds on). Turning it on arms Away now, with the normal exit delay, and asks any task that's running to stop (a robot goes back to its base, or stops where it is if it can't make it in time). Away from the security tile, scenes, automations and Siri waits until robots are done instead."
       },
-      "robotReturnSeconds": {
-        "title": "Extra time for robots to get home (seconds)",
+      "taskWaitSeconds": {
+        "title": "Extra time for tasks to finish (seconds)",
         "type": "integer",
         "default": 120,
         "minimum": 0,
         "maximum": 300,
-        "description": "If Away is armed while a robot is out, the countdown waits up to this much longer for it to get back to its base, and arms as soon as it's docked. 0: no waiting."
+        "description": "If Away is armed while a task is running, like a robot heading back to its base, the countdown waits up to this much longer, and arms as soon as it's done. 0: no waiting."
       },
       "airQuality": {
         "title": "Air quality sensors",

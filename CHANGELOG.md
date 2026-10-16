@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.5.0
 
 - The `pollInterval` setting is gone: the security state is read every 10 s, as often as the ecobee
   app does (it has no live updates either). A value left in the config is ignored.
@@ -16,7 +16,7 @@
 - New setting **Allow security holds** (`allowHolds`, off by default): other plugins can only hold
   Stay with it turned on; otherwise `/hold` and `/release` answer 403 with the reason, and a hold
   left over from before is dropped without re-arming Away. **If you use homebridge-narwal-freo's
-  security hold, turn this on.**
+  security hold, turn this on and tick Narwal Freo.**
 - Hold and release decide on ecobee's live state, read at the moment of the request, not the last
   poll: a disarm in the ecobee app seconds before a robot finishes is no longer armed over with
   Away. If ecobee can't be read, a hold is refused and a release doesn't arm (the caller retries).

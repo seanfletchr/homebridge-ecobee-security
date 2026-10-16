@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.7.1
+
+- Keypad unlock: the plugin now reads ecobee's current state first and only disarms when the system
+  is armed, arming or alarming. A disarm sent while it was already off was followed by ecobee camera
+  activity alerts.
+- An intrusion incident only shows as **Alarm triggered** while the system is armed. ecobee also
+  opens one for a camera activity alert while the system is off, which briefly showed as an alarm in
+  the Home app (and counted as one for security holds). Smoke alarms still show at any time.
+
 ## 0.7.0
 
 - New setting **Disarm when a door is unlocked with its keypad** (`keypadDisarm`, off by default,

@@ -92,8 +92,9 @@ node <plugin folder>/bin/ecobee-login.js --browser  # website sign-in
   exit delay (0 by default). Off needs no PIN.
 - **Changes from elsewhere** (ecobee app, keypad, ecobee automations) show up within 10 s, about
   as fast as in the ecobee app (it polls too), and quickly after an exit delay ends.
-- **Alarm triggered** while ecobee lists an open incident (see `alarmTrigger` above for when it
-  starts showing). Disarming clears it. Every change in the incident list is logged.
+- **Alarm triggered** while ecobee lists an open incident: a smoke alarm at any time, an intrusion
+  only while armed (ecobee also opens one for a camera activity alert while the system is off; that
+  isn't shown as an alarm). See `alarmTrigger` above for when it starts showing. Disarming clears it. Every change in the incident list is logged.
 - **Siri:** asking for Home or for Stay mode both set Home (ecobee's Stay).
 - **Night** is only offered with `offerNight`; ecobee has no Night mode of its own.
 - After three failed reads in a row the accessory shows a fault; reads back off up to 5 minutes.
@@ -111,6 +112,8 @@ schedules, expiry), so the plugin needs no codes of its own.
   unlocked (HomeKit's Lock Last Known Action), for example homebridge-nest-accfactory's Nest × Yale
   locks. The settings page lists the locks found; untick the ones that shouldn't disarm. Locks
   paired to Apple Home directly (not through Homebridge) can't be seen.
+- **Only when armed:** the plugin checks ecobee's current state first and sends nothing if the system
+  is already off.
 - **Only keypad unlocks** count: not the app, Siri, automations, a key or the thumb turn. Any code
   that opens the lock disarms, yours included.
 - **Speed:** the plugin checks the locks every second; the disarm reaches ecobee about as fast as

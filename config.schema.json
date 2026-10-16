@@ -37,7 +37,7 @@
         "title": "Offer Night",
         "type": "boolean",
         "default": false,
-        "description": "Adds Night to the Home app, for automations or Siri that use it. ecobee has no Night mode, so Night arms Stay; the Home app keeps showing Night until the state changes. Changing this setting recreates the security system in the Home app, so scenes and automations that use it have to be set up again."
+        "description": "Adds the Night setting for more specific automations. ecobee has no \"Night\" mode, so Night arms Stay. Changing this recreates the security system in the Home app; scenes and automations using it must be set up again."
       },
       "alarmTrigger": {
         "title": "Enter Triggered State",

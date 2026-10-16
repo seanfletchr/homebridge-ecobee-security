@@ -56,6 +56,21 @@
   </div>
 </div>
 
+
+<div class="card card-body mb-3" id="holds-card" hidden>
+  <h5 class="mb-2">Security holds</h5>
+  <div class="form-check form-switch mb-1">
+    <input class="form-check-input" type="checkbox" role="switch" id="allow-holds">
+    <label class="form-check-label" for="allow-holds">Allow security holds</label>
+  </div>
+  <p class="hint mb-2">Lets supported plugins, like a robot vacuum, switch Away to Home while they work and back to
+    Away when they're done.
+    <a href="https://github.com/seanfletchr/homebridge-ecobee-security#security-holds" target="_blank" rel="noopener">Learn more…</a></p>
+  <div id="hold-plugins-box" hidden>
+    <div class="mb-1">Allowed plugins</div>
+    <div id="hold-plugins"></div>
+  </div>
+</div>
 <script>
 (async () => {
   const PLATFORM = 'EcobeeSecurityPlatform';
@@ -113,6 +128,7 @@
     $('browser').open = false;
     homebridge.toast.success('Signed in to ecobee.');
     await showStatus({ justSignedIn: true });
+    await showHolds();
   }
 
   passwordForm.addEventListener('submit', async event => {
@@ -176,7 +192,65 @@
     }
   });
 
+
+  // ── Security holds ──
+
+  async function showHolds() {
+    const blocks = await homebridge.getPluginConfig();
+    const block = blocks[0] ?? {};
+    $('holds-card').hidden = !block.refreshToken;
+    $('allow-holds').checked = block.allowHolds === true;
+    $('hold-plugins-box').hidden = block.allowHolds !== true;
+    const plugins = await homebridge.request('/hold-plugins').catch(() => []);
+    const box = $('hold-plugins');
+    box.textContent = '';
+    if (!plugins.length) {
+      const p = document.createElement('p');
+      p.className = 'hint mb-0';
+      p.textContent = 'No plugin has asked for a hold yet.';
+      box.append(p);
+      return;
+    }
+    // Without a list (settings from before it), every plugin is allowed.
+    const allowed = Array.isArray(block.holdPlugins) ? block.holdPlugins : plugins.map(p => p.key);
+    for (const plugin of plugins) {
+      const id = `hold-${plugin.key.replace(/[^a-z0-9]/gi, '-')}`;
+      const input = Object.assign(document.createElement('input'), {
+        className: 'form-check-input', type: 'checkbox', id, checked: allowed.includes(plugin.key),
+      });
+      input.addEventListener('change', () => setAllowed(plugins, plugin.key, input.checked));
+      const label = Object.assign(document.createElement('label'), { className: 'form-check-label', htmlFor: id });
+      label.textContent = plugin.displayName === plugin.key ? plugin.key : `${plugin.displayName} (${plugin.key})`;
+      const row = Object.assign(document.createElement('div'), { className: 'form-check mb-1' });
+      row.append(input, label);
+      if (plugin.names.length || plugin.lastAsked) {
+        const hint = Object.assign(document.createElement('div'), { className: 'hint' });
+        const when = plugin.lastAsked ? `last asked ${new Date(plugin.lastAsked).toLocaleString()}` : '';
+        hint.textContent = [plugin.names.length ? `for ${plugin.names.join(', ')}` : '', when].filter(Boolean).join(', ');
+        row.append(hint);
+      }
+      box.append(row);
+    }
+  }
+
+  async function setAllowed(plugins, key, on) {
+    const blocks = await homebridge.getPluginConfig();
+    const block = blocks[0];
+    const current = Array.isArray(block.holdPlugins) ? block.holdPlugins : plugins.map(p => p.key);
+    block.holdPlugins = on ? [...new Set([...current, key])] : current.filter(k => k !== key);
+    await homebridge.updatePluginConfig([block, ...blocks.slice(1)]);
+  }
+
+  $('allow-holds').addEventListener('change', async () => {
+    const blocks = await homebridge.getPluginConfig();
+    const block = blocks[0];
+    block.allowHolds = $('allow-holds').checked;
+    $('hold-plugins-box').hidden = !block.allowHolds;
+    await homebridge.updatePluginConfig([block, ...blocks.slice(1)]);
+  });
+
   await showStatus();
+  await showHolds();
   homebridge.showSchemaForm();
 })();
 </script>

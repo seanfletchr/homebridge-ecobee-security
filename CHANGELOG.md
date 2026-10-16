@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Settings: a **Security holds** section with the **Allow security holds** switch and a checkbox per
+  plugin (`holdPlugins`): installed plugins that declare they use holds, and any that asked. Hold
+  requests can name their plugin (`&plugin=<package>`); unticked plugins are refused.
 - Declares the hold socket in package.json (`"homebridge-security-hold": { "socket": … }`), so
   plugins that support the hold, like homebridge-narwal-freo, list it in their settings.
 - Hold API: several plugins (e.g. two robot vacuums) can hold Stay at once; Away comes back only

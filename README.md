@@ -109,8 +109,10 @@ decides, by four rules:
 4. **No timers:** nothing changes unless a plugin asks or you act.
 
 Every decision uses ecobee's state read at that moment, not the last poll. Holds are off until you
-turn on **Allow security holds** in the settings; turning it off drops a hold left over from before
-(without arming Away).
+turn on **Allow security holds** in the settings' **Security holds** section and tick each plugin that
+may ask (`holdPlugins`): it lists installed plugins that declare they use holds, and any plugin that
+has asked. A plugin that isn't ticked is refused (it can still release a hold it already has).
+Turning holds off drops a hold left over from before (without arming Away).
 
 **Limits** that follow from these rules:
 
@@ -121,21 +123,25 @@ turn on **Allow security holds** in the settings; turning it off drops a hold le
 - **Your change wins even with a robot still out.** After you cancel a hold (say, disarm), arming
   Away while the robot is still cleaning can set off the motion sensors: a plugin only asks for a
   hold when it starts.
-- **Every plugin on this Homebridge is trusted.** The setting is all or nothing: any plugin running
-  as the homebridge user can ask, and the name it gives is its own claim. Two plugins with the same
-  name share one hold.
+- **Plugins identify themselves.** Any plugin running as the homebridge user can reach the socket,
+  and the plugin name it gives is its own claim: the list keeps honest plugins apart, it isn't a
+  lock. Two requests with the same name share one hold.
 - **A plugin that never releases leaves the system in Stay** until you change it.
 
 **API** (for plugin authors): a Unix socket at `<homebridge storage>/ecobee-security/control.sock`
 (mode 600, homebridge user only), declared in `package.json` as
 `"homebridge-security-hold": { "socket": "ecobee-security/control.sock" }` so plugins that support
-holds, like homebridge-narwal-freo, can list it.
+holds, like homebridge-narwal-freo, can list it. Plugins that ask for holds can declare
+`"homebridge-security-hold": { "client": true }` to show up in the list before their first request.
+The full API: [Security hold](https://github.com/seanfletchr/homebridge-narwal-freo/blob/main/docs/security-hold.md).
 
-- `POST /hold?by=<name>` → `{ "ok": true, "held": true|false, "state": "…" }`, or `"ok": false`
-  with a `"reason"`: don't start.
-- `POST /release?by=<name>` → `{ "released": true|false, "state": "…", "waiting": [names] }`;
+- `POST /hold?by=<name>&plugin=<package>` → `{ "ok": true, "held": true|false, "state": "…" }`,
+  or `"ok": false` with a `"reason"`: don't start. `plugin` is optional; without it the plugin is
+  listed (and allowed) under its `by` name.
+- `POST /release?by=<name>&plugin=<package>` → `{ "released": true|false, "state": "…", "waiting": [names] }`;
   `waiting` lists holders still out.
-- With `allowHolds` off, both answer 403; if ecobee can't be read (release) or isn't connected
+- With `allowHolds` off or the plugin not ticked, both answer 403 (a release from a current holder
+  is always accepted); if ecobee can't be read (release) or isn't connected
   yet, a 5xx with `"error"` — try again later. Holds survive restarts (in `state.json`).
 
 ## API notes

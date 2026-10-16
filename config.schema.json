@@ -69,7 +69,15 @@
         "title": "Allow security holds",
         "type": "boolean",
         "default": false,
-        "description": "Lets other Homebridge plugins (for example homebridge-narwal-freo, so a robot vacuum can clean while you're away) switch Away to Stay for a while and back to Away when they're done. They ask through a socket only the homebridge user can use. If you change the security system in between, it's left as you set it. See \"Security holds\" in the README."
+        "description": "Lets other Homebridge plugins (for example a robot vacuum, so it can clean while you're away) switch Away to Stay for a while and back to Away when they're done. Each plugin also has to be allowed in holdPlugins (the settings page lists the ones that asked). See \"Security holds\" in the README."
+      },
+      "holdPlugins": {
+        "title": "Plugins allowed to ask for holds",
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Package names (or, for a plugin that doesn't say, the name it asks with). Without this list, every plugin may ask once Allow security holds is on."
       },
       "airQuality": {
         "title": "Air quality sensors",
@@ -88,5 +96,16 @@
         }
       }
     }
-  }
+  },
+  "layout": [
+    "name",
+    "refreshToken",
+    "homeId",
+    "pollInterval",
+    "offerNight",
+    "alarmTrigger",
+    "smokeSensor",
+    "airQuality",
+    "co2Alert"
+  ]
 }

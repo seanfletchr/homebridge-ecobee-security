@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.8.0
+
+- While the plugin can't reach ecobee (three failed reads in a row, or signed out), the security
+  tile, the Smoke Alarm and the air quality sensors show **No Response** in the Home app instead of
+  their last state. They come back with the next successful read.
+- The security tile and Smoke Alarm also show **No Response** when ecobee's cloud can't reach the
+  thermostats Smart Security runs on: every thermostat unreachable for a minute. One dropping out
+  briefly doesn't count, and it comes back as soon as one is connected. A thermostat's air quality
+  sensors show No Response while ecobee can't reach it. Security holds are refused meanwhile.
+- New setting **Home Occupied switch** (`occupancySwitch`, off by default; `occupancyName`): a switch
+  for your Home app people-arrive and people-leave automations. Off arms Away like the Home app tile
+  does (waiting for robots that are out), on turns Away off (never Home, Night or Off). Switches
+  don't need the confirmation that automations controlling a security system do.
+- Settings page: the Home ID field is now a list of the homes on your ecobee account, shown only
+  when there's more than one (the list fills in once the plugin has started).
+
 ## 0.7.1
 
 - Keypad unlock: the plugin now reads ecobee's current state first and only disarms when the system

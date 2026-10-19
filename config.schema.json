@@ -24,7 +24,7 @@
       "homeId": {
         "title": "Home ID",
         "type": "string",
-        "description": "Only needed if your account has more than one home. The log lists your homes."
+        "description": "Only needed if your ecobee account has more than one home. The settings page lists them."
       },
       "offerNight": {
         "title": "Offer Night",
@@ -99,6 +99,21 @@
           "type": "string"
         },
         "description": "Serial numbers of the locks that disarm (the settings page lists the ones found). With no list, every lock does."
+      },
+      "occupancySwitch": {
+        "title": "Home Occupied switch",
+        "type": "boolean",
+        "default": false,
+        "description": "Adds a Home Occupied switch to the Home app. Your own people-arrive and people-leave automations set it, and it does the rest: off (nobody home) arms Away, on (someone home) turns Away off. Switches don't ask for confirmation the way automations that change the security system do. See \"Home Occupied switch\" in the README."
+      },
+      "occupancyName": {
+        "title": "Home Occupied switch name",
+        "type": "string",
+        "default": "Home Occupied",
+        "description": "Name shown in the Home app.",
+        "condition": {
+          "functionBody": "return model.occupancySwitch === true;"
+        }
       },
       "airQuality": {
         "title": "Air quality sensors",

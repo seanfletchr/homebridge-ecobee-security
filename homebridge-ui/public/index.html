@@ -64,10 +64,10 @@
     <input class="form-control" type="text" id="s-name" data-key="name" data-type="text" data-default="Security System">
     <div class="hint mt-1">Name shown in the Home app.</div>
   </div>
-  <div class="mb-3">
-    <label for="s-homeId" class="form-label">Home ID</label>
-    <input class="form-control" type="text" id="s-homeId" data-key="homeId" data-type="text" data-default="">
-    <div class="hint mt-1">Only needed if your account has more than one home. The log lists your homes.</div>
+  <div class="mb-3" id="home-box" hidden>
+    <label for="s-homeId" class="form-label">Home</label>
+    <select class="form-select" id="s-homeId" data-key="homeId" data-type="select" data-default=""></select>
+    <div class="hint mt-1">Your ecobee account has more than one home. Pick the one whose security system to add.</div>
   </div>
   <div class="mb-3">
     <div class="form-check form-switch">
@@ -119,6 +119,23 @@
   <div id="keypad-locks-box" hidden>
     <div class="mb-1">Locks that disarm</div>
     <div id="keypad-locks"></div>
+  </div>
+</div>
+
+<div class="card card-body mb-3" id="occupancy-card" hidden>
+  <h5 class="mb-2">Home Occupied switch</h5>
+  <div class="form-check form-switch mb-1">
+    <input class="form-check-input" type="checkbox" role="switch" id="s-occupancySwitch" data-key="occupancySwitch" data-type="bool" data-default="false">
+    <label class="form-check-label" for="s-occupancySwitch">Home Occupied switch</label>
+  </div>
+  <p class="hint mb-2">Adds a switch to the Home app for your people-arrive and people-leave automations to set:
+    off (nobody home) arms Away, on (someone home) turns Away off. Switches don't ask for confirmation the way
+    automations that change the security system do. Restart the bridge after changing this.
+    <a href="https://github.com/seanfletchr/homebridge-ecobee-security#home-occupied-switch" target="_blank" rel="noopener">Learn more…</a></p>
+  <div id="occupancy-box" hidden>
+    <label for="s-occupancyName" class="form-label mb-1">Name</label>
+    <input class="form-control" type="text" id="s-occupancyName" data-key="occupancyName" data-type="text" data-default="Home Occupied">
+    <div class="hint mt-1">Name shown in the Home app.</div>
   </div>
 </div>
 
@@ -279,6 +296,8 @@
     const signedIn = Boolean(block?.refreshToken);
     $('system-card').hidden = !signedIn;
     $('sensors-card').hidden = !signedIn;
+    $('occupancy-card').hidden = !signedIn;
+    await showHomes(block);
     for (const input of controls) {
       const value = block?.[input.dataset.key];
       if (input.dataset.type === 'bool') {
@@ -288,6 +307,27 @@
       }
     }
     $('co2-box').hidden = block?.airQuality === false;
+    $('occupancy-box').hidden = block?.occupancySwitch !== true;
+  }
+
+  /**
+   * The home list, from what the plugin last saw. Only offered when there's a choice: one home (or
+   * none seen yet) hides it, unless a home is already set.
+   */
+  async function showHomes(block) {
+    const homes = await homebridge.request('/homes').catch(() => []);
+    const select = $('s-homeId');
+    select.textContent = '';
+    const option = (value, text) => select.append(Object.assign(document.createElement('option'), { value, textContent: text }));
+    option('', 'Automatic (the first home with Smart Security)');
+    for (const home of homes) {
+      option(home.id, home.security ? home.name : `${home.name} (no Smart Security)`);
+    }
+    const set = block?.homeId;
+    if (set && !homes.some(h => h.id === set)) {
+      option(set, homes.length ? `${set} (not on this account)` : set);
+    }
+    $('home-box').hidden = homes.length < 2 && !set;
   }
 
   /** Write one setting. Top-level keys are cleared with undefined, never deleted (the UI merges shallowly). */
@@ -305,6 +345,8 @@
         await setSetting(key, input.checked);
         if (key === 'airQuality') {
           $('co2-box').hidden = !input.checked;
+        } else if (key === 'occupancySwitch') {
+          $('occupancy-box').hidden = !input.checked;
         }
       } else if (type === 'int') {
         const number = input.value.trim() === '' ? undefined : Number(input.value);
@@ -314,7 +356,7 @@
           await setSetting(key, number);
         }
       } else if (type === 'select') {
-        await setSetting(key, input.value);
+        await setSetting(key, input.value === '' ? undefined : input.value);
       } else {
         await setSetting(key, input.value.trim() === '' ? undefined : input.value.trim());
       }

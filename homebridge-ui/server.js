@@ -82,6 +82,16 @@ class UiServer extends HomebridgePluginUiServer {
       }
     });
 
+    // The homes on the account, as the plugin last saw them (only that list leaves state.json).
+    this.onRequest('/homes', async () => {
+      try {
+        const store = JSON.parse(await readFile(join(this.homebridgeStoragePath, 'ecobee-security', 'state.json'), 'utf8'));
+        return store.homes ?? [];
+      } catch {
+        return [];
+      }
+    });
+
     this.ready();
   }
 

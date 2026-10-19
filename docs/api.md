@@ -73,3 +73,51 @@ the older REST API with the same bearer token, selecting thermostats by id (`sel
 "registered"` returns none on this account):
 `GET https://api.ecobee.com/1/thermostat?json={"selection":{"selectionType":"thermostats","selectionMatch":"<id>,<id>","includeRuntime":true}}`
 → `thermostatList[].runtime.{actualCO2 (ppm), actualVOC (ppb), actualAQScore, actualAQAccuracy, actualHumidity}`.
+
+## Connectivity (captured 2026-10-19)
+Smart Security runs on the thermostats, so "the system is offline" means ecobee's cloud can't reach
+them. `HomesAndDevicesPolling` (every ~10 s in the app) returns each thermostat's
+`legacyRuntime { connected }` (false while it's offline); REST `/1/thermostat` with `includeRuntime`
+has `runtime.{connected, connectDateTime, disconnectDateTime}`. Cameras report `isConnected` and
+`isHealthy` (`query Camera`).
+
+## Location / presence (captured 2026-10-19)
+```graphql
+query AutopilotSettings($homeID: ID!, $includePresence: Boolean!) { homes(id: $homeID) { id
+  monitoring { homeMonitoringSettings {
+    arrivalSettings { noAction { isEnabled } }
+    departureSettings { prompt { isEnabled } auto { isVisible } noAction { isEnabled } } } }
+  members { accountId name presence @include(if: $includePresence)
+    mobileDevice { id locationTracking locationPermission locationPrecision } } } }
+```
+`presence` is `HOME`, `AWAY` or `UNKNOWN` per home member, from the ecobee app's geofence on each
+member's registered phone (`locationTracking: ENABLED`, `locationPermission: ALWAYS | NEVER | …`).
+A member whose phone has location permission `NEVER`, or whose registered phone is an old one, reads
+`AWAY` regardless. `mutation EnableLocationTracking` (`enableLocationTrackingForMobileDevice`,
+`input { mobileDeviceId, name }`) registers the current phone; the phone then reports through
+`ls-api.ecobee.com` and `SendMobileDeviceStateChange`.
+
+## Doorbell / camera (captured 2026-10-19)
+`query Camera($cameraID)` → `devices { cameras(filter: {id}) { id name model isConnected serialNumber
+firmwareVersion homeKitLiveEnabledState settings { isLiveEnabled … } firmware { capabilities } } }`.
+The Smart Doorbell Camera is model `ASTERIA`; events name it `type: DOORBELL`.
+
+Events (motion, person, doorbell press) come from `query HomeEvents($homeID, $first, $filter: { actorIds: [<camera id>] })`
+→ `events.edges[].node { id parentId type startedAt endedAt actor { id name type } media { type uri } }`;
+types seen: `PERSON_DETECTED`, `DOORBELL_PRESSED`. A video media `uri` is `<detection id>:DETECT_PERSON`.
+
+Recorded clips: `query CameraSignedPlaylists($deviceID, $playlistFilter: { detectionId, startTime, endTime })`
+→ `signedPlaylists.playlists[].uri`, an HLS playlist on `mosaicbee.cam-prod.ecobee.com` with a
+short-lived `auth` token (segments from S3). Snapshots: `mutation CapturePreviewSnapshotForCamera`
+→ `previewThumbnailUri`.
+
+Live view is WebRTC, signalled over GraphQL:
+1. `query IceServers { user { iceServers { username credential serverUris } } }` (Twilio TURN).
+2. `mutation InitiateLiveVideoOfferForCamera(input: { cameraId, sessionDescriptionProtocolInformation })`,
+   the offer as base64 of `{"type":"offer","sdp":…}` → `sessionDescriptionProtocolAnswer`, the
+   answer in the same encoding, its ICE candidates inline (the camera's LAN host candidate included).
+3. `mutation SendIceCandidateForCamera(input: { cameraId, candidate })` trickles the app's
+   candidates: `candidate` is base64 of a JSON list of base64 JSON
+   `{candidate, sdpMid, sdpMLineIndex, serverUrl}` (firmware capability `ICE_CANDIDATE_BATCHING`).
+The camera sends H.264 constrained baseline (`profile-level-id=42e029`, packetization-mode 1;
+VP8/VP9 also offered) and Opus audio (two-way), plus a data channel.

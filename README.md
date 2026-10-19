@@ -69,7 +69,7 @@ node <plugin folder>/bin/ecobee-login.js --browser  # website sign-in
 }
 ```
 
-`homeId` is only needed if the account has several homes (the log lists them).
+`homeId` is only needed if the account has several homes (the settings page lists them).
 
 | Setting | Default | |
 |---|---|---|
@@ -80,6 +80,8 @@ node <plugin folder>/bin/ecobee-login.js --browser  # website sign-in
 | `holdPlugins` | all | The plugins allowed to do that; the settings page lists them. |
 | `armAwayNowSwitch` | `false` | Adds an **Arm Away Now** switch: arms Away immediately and asks any task in progress to stop (a robot goes home). |
 | `taskWaitSeconds` | `120` | How much longer the Away countdown may wait for a task to finish, e.g. a robot getting home (0: don't wait). |
+| `occupancySwitch` | `false` | Adds a **Home Occupied** switch for your presence automations (see [Home Occupied switch](#home-occupied-switch)). |
+| `occupancyName` | `"Home Occupied"` | The switch's name in the Home app. |
 | `keypadDisarm` | `false` | Turns the security system off when a door is unlocked with a code on its keypad (see [Keypad unlock](#keypad-unlock)). |
 | `keypadLocks` | all | The locks that do that, by serial number; the settings page lists the ones found. |
 | `airQuality` | `true` | For each thermostat with an air quality sensor: an accessory "&lt;thermostat&gt; Air Quality" with an **Air Quality Sensor** (overall level; VOC as ecobee reports it, in ppb, which the Home app labels µg/m³) and a **Carbon Dioxide Sensor** (ppm). Read every 5 minutes. The level follows the ecobee app's Clean–Poor bar: its first two segments are Excellent, then Good, Fair, Inferior, Poor; Unknown while the sensor calibrates. |
@@ -97,8 +99,13 @@ node <plugin folder>/bin/ecobee-login.js --browser  # website sign-in
   isn't shown as an alarm). See `alarmTrigger` above for when it starts showing. Disarming clears it. Every change in the incident list is logged.
 - **Siri:** asking for Home or for Stay mode both set Home (ecobee's Stay).
 - **Night** is only offered with `offerNight`; ecobee has no Night mode of its own.
-- After three failed reads in a row the accessory shows a fault; reads back off up to 5 minutes.
+- After three failed reads in a row the accessory shows a fault, and the security tile, Smoke Alarm and air
+  quality sensors show **No Response** instead of their last state until ecobee answers again; reads back off up to 5 minutes.
+  The security tile and Smoke Alarm also show No Response when ecobee can't reach your thermostats, which run
+  Smart Security, for a minute (all of them; one dropping out briefly doesn't count), and an air quality sensor
+  does when ecobee can't reach its thermostat.
 - **Keypad unlock:** unlocking a door with its keypad can turn the system off: see below.
+- **Home Occupied switch:** your arrive and leave automations can arm and disarm Away without a confirmation prompt: see below.
 - **Security holds** let other plugins, like a robot vacuum, keep the system from arming Away while they work: see below.
 
 ## Keypad unlock
@@ -125,6 +132,39 @@ schedules, expiry), so the plugin needs no codes of its own.
   Control; the Homebridge UI's accessory control uses it too): the plugin reads the locks over HAP on
   127.0.0.1 with the bridge PIN, since each child bridge runs in its own process. The log says if
   it isn't on.
+
+## Home Occupied switch
+
+Apple Home asks you to confirm (a notification you have to tap) whenever a people-arrive or
+people-leave automation changes a security system. Automations that flip an ordinary switch don't
+ask. Turn on **Home Occupied switch** (`occupancySwitch`) and the plugin adds a **Home Occupied**
+switch (named by `occupancyName`) that those automations set instead; the plugin then changes the
+security system itself.
+
+In the Home app, create two automations:
+
+1. **When the last person leaves** (People > Leave, "Everyone leaves") > turn **Home Occupied** off.
+2. **When the first person arrives** (People > Arrive, "Anyone arrives") > turn **Home Occupied** on.
+
+What each direction does:
+
+- **Off (nobody home)** arms **Away** exactly as Away from the Home app does: the normal exit delay,
+  and if a robot or other task is out it [waits for it](#security-holds). Home, Night and Off are all
+  switched to Away; if it is already Away, or waiting to be, nothing happens.
+- **On (someone home)** turns the system **off, but only if it is Away** (armed, arming, or waiting for
+  a task to finish). Home and Night, and a system that is already off, are left as they are, so
+  arriving never cancels the Home you set before bed.
+- Only a real change counts: setting the switch to the value it already has does nothing. It starts as
+  on and is remembered across restarts; restarting the plugin never arms or disarms anything.
+- The switch is your presence signal, not a mirror of the security system: arming or disarming
+  elsewhere doesn't move it.
+- If ecobee can't be reached, the switch still keeps its new value; the log says the security system
+  was left as it was (disarming is retried once).
+
+> [!CAUTION]
+> HomeKit doesn't ask for authorisation to use a switch. Turning Home Occupied on, by hand, with Siri
+> or from a shared home member's phone, turns off an Away system, so treat it as as sensitive as the
+> security tile itself.
 
 ## Security holds
 

@@ -1,5 +1,55 @@
 # Changelog
 
+## 0.9.0
+
+### Doorbell camera (beta)
+
+- New setting **Doorbell camera** (`doorbellCamera`, off by default; `ffmpegPath`): the ecobee Smart
+  Doorbell Camera as its own HomeKit camera, with live view and snapshots. The plugin keeps a session to
+  the camera open on your network, reconnects by itself, and the camera shows **No Response** while it is
+  down or ecobee can't be reached. Needs an ffmpeg with libfdk_aac and libx264 (the Homebridge Raspberry
+  Pi image has one). Live view and recordings carry an ecobee watermark.
+- **Doorbell link** (settings > Doorbell camera): pair the plugin with the doorbell's own HomeKit server
+  from the settings page. The camera then becomes a **video doorbell** with an instant ring (single,
+  double and long press) and a motion sensor, the ecobee sensors the doorbell bridges to HomeKit are
+  published by the plugin, and the doorbell's **Chime Doorbell**, **Camera Status Light** and **Night
+  Vision Light** switches are kept in sync. Remove ecobee's own doorbell from the Home app first.
+- **HomeKit Secure Video**: recordings start about 4 seconds before the motion. Video is encoded in
+  software (libx264), which takes about 2 of a Raspberry Pi 4's cores while recording. Motion comes from
+  the doorbell link, or from ecobee's cloud every 5 seconds without it. New setting **Motion grace
+  period** (`motionGrace`, 15 seconds): the motion sensor stays on this long after motion ends, so clips
+  are at least about 10 seconds. `debugRecordings` keeps the last clips for troubleshooting.
+
+### Switches and sensors
+
+- **Home Occupied** now also has an occupancy sensor that follows the switch (Occupied while it is on).
+- New setting **Vacation Mode switch** (`vacationSwitch`, off by default): a switch that is on while an
+  ecobee vacation is running, for other accessories to follow. Turn it on to start a vacation now, until
+  you turn it off (30 days at the latest); set dated vacations in the ecobee app. Turning it off ends the
+  vacation. Shows No Response while ecobee can't be reached.
+- The two switches have fixed names, **Home Occupied** and **Vacation Mode**; rename them in the Home app.
+  The `occupancyName` setting (0.8.0) and the `vacationSwitchName` of earlier test builds still work if
+  they are already in your config, but are no longer in the settings page.
+- Settings page: **Home Occupied** and **Vacation Mode** are now together in a **Switches and
+  sensors** card.
+
+### Settings
+
+- **Offer Night** is now **Enable Night**.
+- **Enter Triggered State** is now **Home app alarm**, with the options *When a sensor is tripped (entry
+  delay starts)* (default, as before) and *When the siren goes off (entry delay ran out)*, and a clearer
+  description: it only changes the Home app's tile and automations, not ecobee's alerts or professional
+  monitoring.
+- Settings page: cards are now ecobee account, Security system, Door keypads, Security holds, Doorbell
+  camera, Switches and sensors. In Doorbell camera the status of the doorbell link comes first, then the
+  link, then Recording, with the ffmpeg path under Advanced.
+- The doorbell camera needs an ffmpeg with libx264 as well as libfdk_aac; without it the camera isn't
+  published and the log says why. The setting's description no longer says ecobee's tile keeps the ring.
+
+### Dependencies
+
+- Added `werift` (MIT) and `hap-controller` (MPL-2.0).
+
 ## 0.8.0
 
 - While the plugin can't reach ecobee (three failed reads in a row, or signed out), the security

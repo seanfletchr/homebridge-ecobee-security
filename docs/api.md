@@ -121,3 +121,20 @@ Live view is WebRTC, signalled over GraphQL:
    `{candidate, sdpMid, sdpMLineIndex, serverUrl}` (firmware capability `ICE_CANDIDATE_BATCHING`).
 The camera sends H.264 constrained baseline (`profile-level-id=42e029`, packetization-mode 1;
 VP8/VP9 also offered) and Opus audio (two-way), plus a data channel.
+
+## Smart Home & Away (probed 2026-10-20, read-only)
+- GraphQL `Home` has no occupancy/away/presence field (tried ~20 names; introspection is off).
+  `members { presence }` is per phone and unreliable (see above).
+- REST `/1/thermostat` with `includeSettings`: `settings.autoAway` (Smart Home & Away enabled) and
+  `settings.followMeComfort`; with `includeSensors`: `remoteSensors[].capability[type=occupancy].value` is
+  per-sensor motion, not the home state; `program.currentClimateRef` follows the schedule.
+- While Smart Home & Away has decided nobody is home, ecobee's REST docs list an event of type `autoAway`
+  (and `autoHome` when it switches back). Not observed live: a vacation was running (it pauses the
+  feature) and the house was occupied. The plugin treats a running `autoAway` as away, anything else as
+  home, and nothing (keeps the last state) when `autoAway` is off or a vacation is running.
+
+## Starting a vacation (REST, not run against a real account)
+`functions: [{ type: 'createVacation', params: { name, coolHoldTemp, heatHoldTemp, startDate, startTime,
+endDate, endTime, fan, fanMinOnTime } }]`, dates `YYYY-MM-DD` and times `HH:MM:SS` in the thermostat's
+own time (`thermostatTime`, with `utcTime`). Hold temperatures in tenths of °F; ecobee's default vacation
+settings are the event `type: "template"`, `name: "_Default_"` in `includeEvents`.

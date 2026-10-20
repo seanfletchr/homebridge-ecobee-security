@@ -56,7 +56,6 @@
   </div>
 </div>
 
-
 <div class="card card-body mb-3" id="system-card" hidden>
   <h5 class="mb-3">Security system</h5>
   <div class="mb-3">
@@ -72,38 +71,15 @@
   <div class="mb-3">
     <div class="form-check form-switch">
       <input class="form-check-input" type="checkbox" role="switch" id="s-offerNight" data-key="offerNight" data-type="bool" data-default="false">
-      <label class="form-check-label" for="s-offerNight">Offer Night</label>
+      <label class="form-check-label" for="s-offerNight">Enable Night</label>
     </div>
     <div class="hint">Adds a Night mode to use in automations. ecobee has no Night mode, so Night arms ecobee's Stay.</div>
     <div class="hint mt-1">Changing this recreates the security system in the Home app, so you need to set up its scenes and automations again.</div>
   </div>
   <div class="mb-0">
-    <label for="s-alarmTrigger" class="form-label">Enter Triggered State</label>
-    <select class="form-select" id="s-alarmTrigger" data-key="alarmTrigger" data-type="select" data-default="incident"><option value="incident">Immediately (mirror ecobee app)</option><option value="entryDelay">After the entry delay</option></select>
-    <div class="hint mt-1">Immediately: as soon as a door or sensor trips while armed, like the ecobee app. After the entry delay: only if no one disarms in time, so automations don't run while you walk in. Smoke alarms always trigger immediately.</div>
-  </div>
-</div>
-
-<div class="card card-body mb-3" id="sensors-card" hidden>
-  <h5 class="mb-3">Sensors</h5>
-  <div class="mb-3">
-    <div class="form-check form-switch">
-      <input class="form-check-input" type="checkbox" role="switch" id="s-smokeSensor" data-key="smokeSensor" data-type="bool" data-default="true">
-      <label class="form-check-label" for="s-smokeSensor">Smoke sensor</label>
-    </div>
-    <div class="hint">Adds a Smoke Alarm accessory that detects smoke when ecobee reports a smoke alarm. Use it for Home app notifications and automations.</div>
-  </div>
-  <div class="mb-3">
-    <div class="form-check form-switch">
-      <input class="form-check-input" type="checkbox" role="switch" id="s-airQuality" data-key="airQuality" data-type="bool" data-default="true">
-      <label class="form-check-label" for="s-airQuality">Air quality sensors</label>
-    </div>
-    <div class="hint">Adds 2 sensors for each ecobee Premium thermostat: air quality (with VOC) and CO2. ecobee's own HomeKit integration doesn't include them. Updates every 5 minutes.</div>
-  </div>
-  <div class="mb-0" id="co2-box">
-    <label for="s-co2Alert" class="form-label">CO2 alert level (ppm)</label>
-    <input class="form-control" type="number" step="1" min="400" id="s-co2Alert" data-key="co2Alert" data-type="int" data-default="1000">
-    <div class="hint mt-1">At or above this level, the CO2 sensor reports abnormal CO2. Use it for notifications and automations, like turning on ventilation.</div>
+    <label for="s-alarmTrigger" class="form-label">Home app alarm</label>
+    <select class="form-select" id="s-alarmTrigger" data-key="alarmTrigger" data-type="select" data-default="incident"><option value="incident">When a sensor is tripped (entry delay starts)</option><option value="entryDelay">When the siren goes off (entry delay ran out)</option></select>
+    <div class="hint mt-1">Sets when the Home app's security tile shows Triggered. Its critical alert and "security system triggered" automations follow it. ecobee's own alerts and professional monitoring don't change. "When a sensor is tripped" alerts every time someone comes in while it'sarmed, even if they disarm in time.</div>
   </div>
 </div>
 
@@ -119,23 +95,6 @@
   <div id="keypad-locks-box" hidden>
     <div class="mb-1">Locks that disarm</div>
     <div id="keypad-locks"></div>
-  </div>
-</div>
-
-<div class="card card-body mb-3" id="occupancy-card" hidden>
-  <h5 class="mb-2">Home Occupied switch</h5>
-  <div class="form-check form-switch mb-1">
-    <input class="form-check-input" type="checkbox" role="switch" id="s-occupancySwitch" data-key="occupancySwitch" data-type="bool" data-default="false">
-    <label class="form-check-label" for="s-occupancySwitch">Home Occupied switch</label>
-  </div>
-  <p class="hint mb-2">Adds a switch to the Home app for your people-arrive and people-leave automations to set:
-    off (nobody home) arms Away, on (someone home) turns Away off. Switches don't ask for confirmation the way
-    automations that change the security system do. Restart the bridge after changing this.
-    <a href="https://github.com/seanfletchr/homebridge-ecobee-security#home-occupied-switch" target="_blank" rel="noopener">Learn more…</a></p>
-  <div id="occupancy-box" hidden>
-    <label for="s-occupancyName" class="form-label mb-1">Name</label>
-    <input class="form-control" type="text" id="s-occupancyName" data-key="occupancyName" data-type="text" data-default="Home Occupied">
-    <div class="hint mt-1">Name shown in the Home app.</div>
   </div>
 </div>
 
@@ -162,6 +121,96 @@
     <input class="form-control" type="number" step="10" min="0" max="300" id="s-taskWaitSeconds" data-key="taskWaitSeconds" data-type="int" data-default="120">
     <div class="hint mt-1">If Away is armed while a task is running, like a robot heading back to its base, the countdown
       waits up to this much longer, and arms as soon as it's done. 0: no waiting.</div>
+  </div>
+</div>
+
+<div class="card card-body mb-3" id="camera-card" hidden>
+  <h5 class="mb-2">Doorbell camera</h5>
+  <div class="form-check form-switch mb-1">
+    <input class="form-check-input" type="checkbox" role="switch" id="s-doorbellCamera" data-key="doorbellCamera" data-type="bool" data-default="false">
+    <label class="form-check-label" for="s-doorbellCamera">Doorbell camera with HomeKit Secure Video</label>
+  </div>
+  <p class="hint mb-2">Recordings, activity zones and Apple's person and package detection in the Home app, plus live view. Restart the bridge after changing this.
+    <a href="https://github.com/seanfletchr/homebridge-ecobee-security#doorbell-camera" target="_blank" rel="noopener">Learn more…</a></p>
+  <div id="camera-box" hidden>
+    <div id="link-box" class="mb-2">
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <span><strong>Doorbell link:</strong> <span id="link-status"></span></span>
+        <button type="button" class="btn btn-sm btn-secondary" id="link-unpair" hidden>Unlink</button>
+        <button type="button" class="btn btn-sm btn-secondary" id="link-open" hidden>Pair…</button>
+      </div>
+      <button type="button" class="btn btn-link btn-sm p-0" id="link-forget" hidden>Remove the link without asking the doorbell</button>
+      <div id="link-unpaired" hidden class="mt-2">
+        <p class="hint mb-2">First remove ecobee's own doorbell from the Home app: its automations and the sensors it connects go with it. Restart the bridge after linking.
+          <a href="https://github.com/seanfletchr/homebridge-ecobee-security#doorbell-link" target="_blank" rel="noopener">Learn more…</a></p>
+        <button type="button" class="btn btn-secondary mb-2" id="link-find">Find doorbells</button>
+        <div id="link-found" class="mb-2"></div>
+        <form id="link-form" class="d-flex gap-2" hidden>
+          <input type="text" class="form-control" id="link-code" inputmode="numeric" autocomplete="off" maxlength="13" placeholder="Setup code (8 digits)" required>
+          <button type="submit" class="btn btn-primary" id="link-pair">Pair</button>
+        </form>
+      </div>
+      <div id="link-error" class="alert alert-danger mt-2 mb-0" role="alert" hidden></div>
+    </div>
+    <details>
+      <summary>Advanced</summary>
+      <div class="mt-2">
+        <label for="s-motionGrace" class="form-label mb-1">Motion grace period (seconds)</label>
+        <input class="form-control mb-1" type="number" step="1" min="6" max="120" id="s-motionGrace" data-key="motionGrace" data-type="int" data-default="15">
+        <div class="hint mb-3">How long a clip keeps recording after motion stops. Someone back in view within this time stays in the same clip.</div>
+        <label for="s-ffmpegPath" class="form-label mb-1">ffmpeg path</label>
+        <input class="form-control" type="text" id="s-ffmpegPath" data-key="ffmpegPath" data-type="text" data-default="" placeholder="/usr/local/bin/ffmpeg">
+        <div class="hint mt-1">Only if the camera can't find ffmpeg. It needs libfdk_aac and libx264.</div>
+      </div>
+    </details>
+  </div>
+</div>
+
+<div class="card card-body mb-3" id="sensors-card" hidden>
+  <h5 class="mb-3">Switches and sensors</h5>
+
+  <div>
+    <h6 class="mb-1">Home Occupied</h6>
+    <div class="form-check form-switch mb-1">
+      <input class="form-check-input" type="checkbox" role="switch" id="s-occupancySwitch" data-key="occupancySwitch" data-type="bool" data-default="false">
+      <label class="form-check-label" for="s-occupancySwitch">Add a Home Occupied switch</label>
+    </div>
+    <p class="hint mb-2">Adds a switch to the Home app for your people-arrive and people-leave automations to set:
+      off (nobody home) arms Away, on (someone home) turns Away off. Switches don't ask for confirmation the way
+      automations that change the security system do. Restart the bridge after changing this.
+      <a href="https://github.com/seanfletchr/homebridge-ecobee-security#home-occupied-switch" target="_blank" rel="noopener">Learn more…</a></p>
+  </div>
+
+  <div class="mt-3">
+    <h6 class="mb-1">Vacation Mode</h6>
+    <div class="form-check form-switch mb-1">
+      <input class="form-check-input" type="checkbox" role="switch" id="s-vacationSwitch" data-key="vacationSwitch" data-type="bool" data-default="false">
+      <label class="form-check-label" for="s-vacationSwitch">Add a Vacation Mode switch</label>
+    </div>
+    <p class="hint mb-2">Shows when an ecobee vacation is on, for other accessories to follow. Turn it on to start a vacation now, until you turn it off; set dated vacations in the ecobee app. Restart the bridge after changing this.</p>
+  </div>
+
+  <div class="mt-3">
+    <h6 class="mb-1">Smoke Alarm</h6>
+    <div class="form-check form-switch">
+      <input class="form-check-input" type="checkbox" role="switch" id="s-smokeSensor" data-key="smokeSensor" data-type="bool" data-default="true">
+      <label class="form-check-label" for="s-smokeSensor">Add a Smoke Alarm sensor</label>
+    </div>
+    <div class="hint">Adds a Smoke Alarm accessory that detects smoke when ecobee reports a smoke alarm. Use it for Home app notifications and automations.</div>
+  </div>
+
+  <div class="mt-3">
+    <h6 class="mb-1">Air quality</h6>
+    <div class="form-check form-switch">
+      <input class="form-check-input" type="checkbox" role="switch" id="s-airQuality" data-key="airQuality" data-type="bool" data-default="true">
+      <label class="form-check-label" for="s-airQuality">Add air quality sensors</label>
+    </div>
+    <div class="hint">Adds 2 sensors for each ecobee Premium thermostat: air quality (with VOC) and CO2. ecobee's own HomeKit integration doesn't include them. Updates every 5 minutes.</div>
+    <div class="mt-3 mb-0" id="co2-box">
+      <label for="s-co2Alert" class="form-label">CO2 alert level (ppm)</label>
+      <input class="form-control" type="number" step="1" min="400" id="s-co2Alert" data-key="co2Alert" data-type="int" data-default="1000">
+      <div class="hint mt-1">At or above this level, the CO2 sensor reports abnormal CO2. Use it for notifications and automations, like turning on ventilation.</div>
+    </div>
   </div>
 </div>
 
@@ -296,7 +345,8 @@
     const signedIn = Boolean(block?.refreshToken);
     $('system-card').hidden = !signedIn;
     $('sensors-card').hidden = !signedIn;
-    $('occupancy-card').hidden = !signedIn;
+    const link = signedIn ? await homebridge.request('/doorbell-link').catch(() => ({})) : {};
+    $('camera-card').hidden = !signedIn || link.hasDoorbell === false;
     await showHomes(block);
     for (const input of controls) {
       const value = block?.[input.dataset.key];
@@ -307,7 +357,10 @@
       }
     }
     $('co2-box').hidden = block?.airQuality === false;
-    $('occupancy-box').hidden = block?.occupancySwitch !== true;
+    $('camera-box').hidden = block?.doorbellCamera !== true;
+    if (block?.doorbellCamera === true) {
+      await showLink();
+    }
   }
 
   /**
@@ -345,12 +398,15 @@
         await setSetting(key, input.checked);
         if (key === 'airQuality') {
           $('co2-box').hidden = !input.checked;
-        } else if (key === 'occupancySwitch') {
-          $('occupancy-box').hidden = !input.checked;
+        } else if (key === 'doorbellCamera') {
+          $('camera-box').hidden = !input.checked;
+          if (input.checked) {
+            await showLink();
+          }
         }
       } else if (type === 'int') {
         const number = input.value.trim() === '' ? undefined : Number(input.value);
-        const valid = number === undefined || (Number.isInteger(number) && number >= Number(input.min));
+        const valid = number === undefined || (Number.isInteger(number) && number >= Number(input.min) && (!input.max || number <= Number(input.max)));
         input.classList.toggle('is-invalid', !valid);
         if (valid) {
           await setSetting(key, number);
@@ -480,6 +536,101 @@
     await homebridge.updatePluginConfig([block, ...blocks.slice(1)]);
     await showKeypad();
   });
+
+  // ── Doorbell link ──
+
+  let linkChoice;
+
+  function linkError(message) {
+    $('link-error').textContent = message ?? '';
+    $('link-error').hidden = !message;
+  }
+
+  async function showLink() {
+    const link = await homebridge.request('/doorbell-link').catch(() => ({ paired: false }));
+    $('link-unpaired').hidden = true;
+    $('link-open').hidden = link.paired;
+    $('link-unpair').hidden = !link.paired;
+    $('link-forget').hidden = true;
+    $('link-status').textContent = link.paired
+      ? (link.state === 'down' ? 'Linked, but the doorbell is not answering right now. ' : 'Linked · ')
+      : 'Not linked. Pair it for an instant ring and motion; it replaces ecobee\'s own doorbell in the Home app. ';
+  }
+
+  $('link-open').addEventListener('click', () => {
+    $('link-unpaired').hidden = !$('link-unpaired').hidden;
+  });
+
+  $('link-find').addEventListener('click', async () => {
+    linkError();
+    $('link-form').hidden = true;
+    const box = $('link-found');
+    box.textContent = 'Looking…';
+    try {
+      const doorbells = await homebridge.request('/doorbell-find');
+      box.textContent = '';
+      linkChoice = undefined;
+      if (!doorbells.length) {
+        box.textContent = 'No doorbell found. Is ecobee\'s own doorbell removed from the Home app?';
+        return;
+      }
+      for (const d of doorbells) {
+        const id = `doorbell-${d.id.replace(/[^a-z0-9]/gi, '-')}`;
+        const input = Object.assign(document.createElement('input'), { className: 'form-check-input', type: 'radio', name: 'doorbell', id, disabled: !d.availableToPair });
+        input.addEventListener('change', () => {
+          linkChoice = d.id;
+          $('link-form').hidden = false;
+        });
+        const label = Object.assign(document.createElement('label'), { className: 'form-check-label', htmlFor: id });
+        label.textContent = d.availableToPair ? d.name : `${d.name} (still paired: remove it from the Home app first)`;
+        const row = Object.assign(document.createElement('div'), { className: 'form-check' });
+        row.append(input, label);
+        box.append(row);
+      }
+      const only = doorbells.filter(d => d.availableToPair);
+      if (only.length === 1) {
+        box.querySelector('input:not(:disabled)').click();
+      }
+    } catch (error) {
+      box.textContent = '';
+      linkError(error.message);
+    }
+  });
+
+  $('link-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    linkError();
+    homebridge.showSpinner();
+    try {
+      await homebridge.request('/doorbell-pair', { id: linkChoice, code: $('link-code').value });
+      $('link-code').value = '';
+      $('link-form').hidden = true;
+      $('link-found').textContent = '';
+      homebridge.toast.success('Linked. Restart the bridge to use it.');
+      await showLink();
+    } catch (error) {
+      linkError(error.message);
+    } finally {
+      homebridge.hideSpinner();
+    }
+  });
+
+  async function unlink(force) {
+    linkError();
+    homebridge.showSpinner();
+    try {
+      await homebridge.request('/doorbell-unpair', { force });
+      homebridge.toast.success('Unlinked. Restart the bridge to apply it.');
+      await showLink();
+    } catch (error) {
+      linkError(error.message);
+      $('link-forget').hidden = false;
+    } finally {
+      homebridge.hideSpinner();
+    }
+  }
+  $('link-unpair').addEventListener('click', () => unlink(false));
+  $('link-forget').addEventListener('click', () => unlink(true));
 
   await showStatus();
   await showSettings();

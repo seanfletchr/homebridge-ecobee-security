@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 import { HomebridgePluginUiServer, RequestError } from '@homebridge/plugin-ui-utils';
 
+import { findDoorbells, pairDoorbell, readPairing, unpairDoorbell } from '../lib/camera/hap-pairing.js';
 import { browserSignInLink, finishBrowserSignIn, finishMfa, passwordSignIn, SignInError } from '../lib/auth.js';
 
 class UiServer extends HomebridgePluginUiServer {
@@ -89,6 +90,46 @@ class UiServer extends HomebridgePluginUiServer {
         return store.homes ?? [];
       } catch {
         return [];
+      }
+    });
+
+    // The doorbell link: pairing with the doorbell's own HomeKit server. The setup code is used once
+    // and neither logged nor kept.
+    const pairingPath = () => join(this.homebridgeStoragePath, 'ecobee-security', 'doorbell-pairing.json');
+
+    this.onRequest('/doorbell-link', async () => {
+      const pairing = readPairing(pairingPath());
+      let link;
+      let store = {};
+      try {
+        store = JSON.parse(await readFile(join(this.homebridgeStoragePath, 'ecobee-security', 'state.json'), 'utf8'));
+        link = store.doorbellLink;
+      } catch {
+        // not started yet
+      }
+      // hasDoorbell stays undefined until the plugin has looked at the account.
+      return { paired: Boolean(pairing), id: pairing?.id, state: pairing ? link?.state : undefined, hasDoorbell: store.hasDoorbell, name: store.doorbellName };
+    });
+
+    this.onRequest('/doorbell-find', () => findDoorbells(5).catch((error) => {
+      throw new RequestError(`Could not look for doorbells: ${error.message}`);
+    }));
+
+    this.onRequest('/doorbell-pair', async ({ id, code } = {}) => {
+      try {
+        await pairDoorbell({ id: String(id ?? ''), code, path: pairingPath() });
+        return { paired: true };
+      } catch (error) {
+        throw new RequestError(error.message);
+      }
+    });
+
+    this.onRequest('/doorbell-unpair', async ({ force } = {}) => {
+      try {
+        await unpairDoorbell({ path: pairingPath(), force: force === true });
+        return { paired: false };
+      } catch (error) {
+        throw new RequestError(`The doorbell could not be reached to remove the link (${error.message}).`, { code: 'unreachable' });
       }
     });
 

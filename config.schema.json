@@ -27,30 +27,30 @@
         "description": "Only needed if your ecobee account has more than one home. The settings page lists them."
       },
       "offerNight": {
-        "title": "Offer Night",
+        "title": "Enable Night",
         "type": "boolean",
         "default": false,
         "description": "Adds a Night mode to use in automations. ecobee has no Night mode, so Night arms ecobee's Stay. Changing this recreates the security system in the Home app, so you need to set up its scenes and automations again."
       },
       "alarmTrigger": {
-        "title": "Enter Triggered State",
+        "title": "Home app alarm",
         "type": "string",
         "default": "incident",
         "oneOf": [
           {
-            "title": "Immediately (mirror ecobee app)",
+            "title": "When a sensor is tripped (entry delay starts)",
             "enum": [
               "incident"
             ]
           },
           {
-            "title": "After the entry delay",
+            "title": "When the siren goes off (entry delay ran out)",
             "enum": [
               "entryDelay"
             ]
           }
         ],
-        "description": "Immediately: as soon as a door or sensor trips while armed, like the ecobee app. After the entry delay: only if no one disarms in time, so automations don't run while you walk in. Smoke alarms always trigger immediately."
+        "description": "Sets when the Home app's security tile shows Triggered. Its critical alert and \"security system triggered\" automations follow it. ecobee's own alerts and professional monitoring don't change. \"When a sensor is tripped\" alerts every time someone comes in while it's armed, even if they disarm in time. Smoke alarms always trigger immediately."
       },
       "smokeSensor": {
         "title": "Smoke sensor",
@@ -104,15 +104,37 @@
         "title": "Home Occupied switch",
         "type": "boolean",
         "default": false,
-        "description": "Adds a Home Occupied switch to the Home app. Your own people-arrive and people-leave automations set it, and it does the rest: off (nobody home) arms Away, on (someone home) turns Away off. Switches don't ask for confirmation the way automations that change the security system do. See \"Home Occupied switch\" in the README."
+        "description": "Adds a Home Occupied switch to the Home app, with an occupancy sensor. By default your own people-arrive and people-leave automations set it, and it does the rest: off (nobody home) arms Away, on (someone home) turns Away off. Switches don't ask for confirmation the way automations that change the security system do. See \"Home Occupied switch\" in the README."
       },
-      "occupancyName": {
-        "title": "Home Occupied switch name",
-        "type": "string",
-        "default": "Home Occupied",
-        "description": "Name shown in the Home app.",
+      "vacationSwitch": {
+        "title": "Vacation Mode switch",
+        "type": "boolean",
+        "default": false,
+        "description": "Shows when an ecobee vacation is on, for other accessories to follow. Turn it on to start a vacation now, until you turn it off; set dated vacations in the ecobee app."
+      },
+      "doorbellCamera": {
+        "title": "Doorbell camera",
+        "type": "boolean",
+        "default": false,
+        "description": "Brings the ecobee doorbell into HomeKit Secure Video: recordings, activity zones and Apple's person and package detection in the Home app, plus live view. With the doorbell link it replaces ecobee's doorbell (instant ring and motion). Two-way talk isn't supported yet. Restart the bridge after changing this. Add it in the Home app with the setup code shown in the Homebridge log. Needs an ffmpeg with libfdk_aac and libx264. See \"Doorbell camera\" in the README."
+      },
+      "motionGrace": {
+        "title": "Motion grace period (seconds)",
+        "type": "integer",
+        "default": 15,
+        "minimum": 6,
+        "maximum": 120,
+        "description": "How long a clip keeps recording after motion stops. Someone back in view within this time stays in the same clip.",
         "condition": {
-          "functionBody": "return model.occupancySwitch === true;"
+          "functionBody": "return model.doorbellCamera === true;"
+        }
+      },
+      "ffmpegPath": {
+        "title": "ffmpeg path",
+        "type": "string",
+        "description": "Only if the camera can't find ffmpeg. It needs libfdk_aac and libx264. Default: /usr/local/bin/ffmpeg if it exists, else ffmpeg from the PATH.",
+        "condition": {
+          "functionBody": "return model.doorbellCamera === true;"
         }
       },
       "airQuality": {

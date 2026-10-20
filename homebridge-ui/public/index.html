@@ -152,6 +152,12 @@
       </div>
       <div id="link-error" class="alert alert-danger mt-2 mb-0" role="alert" hidden></div>
     </div>
+    <div class="form-check form-switch mb-1">
+      <input class="form-check-input" type="checkbox" role="switch" id="s-twoWayAudio" data-key="twoWayAudio" data-type="bool" data-default="false">
+      <label class="form-check-label" for="s-twoWayAudio">Two-way talk (beta)</label>
+    </div>
+    <p class="hint mb-2">Talk through the doorbell from the Home app's live view. Restart the bridge after changing this.
+      <a href="https://github.com/seanfletchr/homebridge-ecobee-security#two-way-talk-beta" target="_blank" rel="noopener">Learn more…</a></p>
     <details>
       <summary>Advanced</summary>
       <div class="mt-2">
@@ -179,6 +185,27 @@
       off (nobody home) arms Away, on (someone home) turns Away off. Switches don't ask for confirmation the way
       automations that change the security system do. Restart the bridge after changing this.
       <a href="https://github.com/seanfletchr/homebridge-ecobee-security#home-occupied-switch" target="_blank" rel="noopener">Learn more…</a></p>
+    <div id="occupancy-source-box" hidden>
+      <label for="s-occupancySource" class="form-label mb-1">Home Occupied source</label>
+      <select class="form-select" id="s-occupancySource" data-key="occupancySource" data-type="select" data-default="home"><option value="home">Set via Home App Automations</option><option value="autopilot">ecobee Autopilot</option><option value="ecobee">ecobee Smart Home &amp; Away (beta)</option></select>
+      <p class="hint mt-1 mb-0"><span id="occupancy-source-hint"></span>
+        Restart the bridge after changing this.
+        <a href="https://github.com/seanfletchr/homebridge-ecobee-security#home-occupied-source" target="_blank" rel="noopener">Learn more…</a></p>
+    </div>
+  </div>
+
+  <div class="mt-3">
+    <h6 class="mb-1">Household members</h6>
+    <div class="form-check form-switch mb-1">
+      <input class="form-check-input" type="checkbox" role="switch" id="s-memberPresence" data-key="memberPresence" data-type="bool" data-default="false">
+      <label class="form-check-label" for="s-memberPresence">Enable presence sensors for household members</label>
+    </div>
+    <p class="hint mb-2">Adds a sensor for each person you tick, for Home app conditions like "only if Alex is home". Anyone you share your Home with can see them. Restart the bridge after changing this.
+      <a href="https://github.com/seanfletchr/homebridge-ecobee-security#member-presence-sensors" target="_blank" rel="noopener">Learn more…</a></p>
+    <div id="members-box" hidden>
+      <div class="mb-1">People with a sensor</div>
+      <div id="members"></div>
+    </div>
   </div>
 
   <div class="mt-3">
@@ -188,6 +215,37 @@
       <label class="form-check-label" for="s-vacationSwitch">Add a Vacation Mode switch</label>
     </div>
     <p class="hint mb-2">Shows when an ecobee vacation is on, for other accessories to follow. Turn it on to start a vacation now, until you turn it off; set dated vacations in the ecobee app. Restart the bridge after changing this.</p>
+    <div id="vacation-options" hidden>
+      <div class="form-check mb-1">
+        <input class="form-check-input" type="checkbox" id="s-vacationWhenEmpty" data-key="vacationWhenEmpty" data-type="bool" data-default="false">
+        <label class="form-check-label" for="s-vacationWhenEmpty">Start a vacation when the home has been empty for</label>
+      </div>
+      <div class="d-flex align-items-center gap-2 mb-1 ms-4">
+        <input class="form-control" style="width: 6rem" type="number" step="1" min="1" max="720" id="s-vacationEmptyHours" data-key="vacationEmptyHours" data-type="int" data-default="24" aria-label="Hours empty before the vacation starts">
+        <span>hours</span>
+      </div>
+      <div class="hint mb-2 ms-4">A safety net if you forget to turn Vacation Mode on.</div>
+      <div class="form-check mb-1">
+        <input class="form-check-input" type="checkbox" id="s-vacationEndOnArrival" data-key="vacationEndOnArrival" data-type="bool" data-default="false">
+        <label class="form-check-label" for="s-vacationEndOnArrival">End the vacation when someone comes home</label>
+      </div>
+      <div class="hint ms-4">Also ends vacations you set in the ecobee app.</div>
+      <p class="hint mt-2 mb-0" id="vacation-options-hint" hidden></p>
+    </div>
+  </div>
+
+  <div class="mt-3">
+    <h6 class="mb-1">Comfort Setting</h6>
+    <div class="form-check form-switch mb-1">
+      <input class="form-check-input" type="checkbox" role="switch" id="s-comfortSetting" data-key="comfortSetting" data-type="bool" data-default="false">
+      <label class="form-check-label" for="s-comfortSetting">Add Comfort Setting switches</label>
+    </div>
+    <p class="hint mb-2">One switch per ecobee comfort setting (Home, Away, Sleep and your own). Turning one on holds it; turning it off goes back to your schedule. Restart the bridge after changing this.
+      <a href="https://github.com/seanfletchr/homebridge-ecobee-security#comfort-setting" target="_blank" rel="noopener">Learn more…</a></p>
+    <div id="comfort-box" hidden>
+      <label for="s-comfortHoldType" class="form-label mb-1">Hold</label>
+      <select class="form-select" id="s-comfortHoldType" data-key="comfortHoldType" data-type="select" data-default="nextTransition"><option value="nextTransition">Until the next scheduled change</option><option value="indefinite">Until I change it</option></select>
+    </div>
   </div>
 
   <div class="mt-3">
@@ -357,6 +415,10 @@
       }
     }
     $('co2-box').hidden = block?.airQuality === false;
+    showOccupancySource();
+    showVacationOptions();
+    $('comfort-box').hidden = block?.comfortSetting !== true;
+    await showMembers(block);
     $('camera-box').hidden = block?.doorbellCamera !== true;
     if (block?.doorbellCamera === true) {
       await showLink();
@@ -383,6 +445,83 @@
     $('home-box').hidden = homes.length < 2 && !set;
   }
 
+  const SOURCE_HINTS = {
+    home: 'Your arrive/leave automations in the Home app set it.',
+    autopilot: 'Follows the ecobee app\'s location on household members\' phones. Each phone needs location set to Always in the ecobee app.',
+    ecobee: 'The thermostat decides from motion on ecobee sensors (plus phones when Autopilot is on). It can be slow to notice an empty home.',
+  };
+
+  /** The Home Occupied source choice, shown only while the switch is on, with the hint for the chosen source. */
+  function showOccupancySource() {
+    $('occupancy-source-box').hidden = !$('s-occupancySwitch').checked;
+    $('occupancy-source-hint').textContent = SOURCE_HINTS[$('s-occupancySource').value] ?? SOURCE_HINTS.home;
+  }
+
+  /** The vacation options: shown with the Vacation Mode switch, usable only with Home Occupied and a source other than ecobee's. */
+  function showVacationOptions() {
+    $('vacation-options').hidden = !$('s-vacationSwitch').checked;
+    const occupied = $('s-occupancySwitch').checked;
+    const ecobee = $('s-occupancySource').value === 'ecobee';
+    for (const id of ['s-vacationWhenEmpty', 's-vacationEmptyHours', 's-vacationEndOnArrival']) {
+      $(id).disabled = !occupied || ecobee;
+    }
+    const hint = $('vacation-options-hint');
+    hint.hidden = occupied && !ecobee;
+    hint.textContent = !occupied
+      ? 'These need the Home Occupied switch above.'
+      : 'Not available with ecobee Smart Home & Away as the Home Occupied source: ecobee pauses it during a vacation, so it couldn\'t tell when someone comes home.';
+  }
+
+  /** The household members to tick, from what the plugin last saw (untracked ones greyed out with the reason). */
+  async function showMembers(blockIn) {
+    const block = blockIn ?? (await homebridge.getPluginConfig())[0] ?? {};
+    $('members-box').hidden = block.memberPresence !== true;
+    if (block.memberPresence !== true) {
+      return;
+    }
+    const members = await homebridge.request('/members').catch(() => []);
+    const box = $('members');
+    box.textContent = '';
+    if (!members.length) {
+      const p = document.createElement('p');
+      p.className = 'hint mb-0';
+      p.textContent = block.refreshToken
+        ? 'No household members found yet. They show up here a minute after the bridge starts.'
+        : 'Sign in to ecobee first.';
+      box.append(p);
+      return;
+    }
+    const chosen = Array.isArray(block.presenceMembers) ? block.presenceMembers : [];
+    for (const member of members) {
+      const id = `member-${member.accountId.replace(/[^a-z0-9]/gi, '-')}`;
+      const input = Object.assign(document.createElement('input'), {
+        className: 'form-check-input', type: 'checkbox', id, checked: chosen.includes(member.accountId),
+      });
+      input.addEventListener('change', () => setMember(member.accountId, input.checked));
+      const label = Object.assign(document.createElement('label'), { className: 'form-check-label', htmlFor: id });
+      label.textContent = member.name;
+      const row = Object.assign(document.createElement('div'), { className: 'form-check mb-1' });
+      row.append(input, label);
+      if (!member.tracked) {
+        // Ticked but untracked stays enabled so it can be unticked; the plugin doesn't publish it meanwhile.
+        input.disabled = !input.checked;
+        label.style.opacity = '0.6';
+        const hint = Object.assign(document.createElement('div'), { className: 'hint' });
+        hint.textContent = `Not available: ${member.reason}.`;
+        row.append(hint);
+      }
+      box.append(row);
+    }
+  }
+
+  async function setMember(accountId, on) {
+    const blocks = await homebridge.getPluginConfig();
+    const block = blocks[0];
+    const current = Array.isArray(block.presenceMembers) ? block.presenceMembers : [];
+    block.presenceMembers = on ? [...new Set([...current, accountId])] : current.filter(k => k !== accountId);
+    await homebridge.updatePluginConfig([block, ...blocks.slice(1)]);
+  }
+
   /** Write one setting. Top-level keys are cleared with undefined, never deleted (the UI merges shallowly). */
   async function setSetting(key, value) {
     const blocks = await homebridge.getPluginConfig();
@@ -398,6 +537,15 @@
         await setSetting(key, input.checked);
         if (key === 'airQuality') {
           $('co2-box').hidden = !input.checked;
+        } else if (key === 'occupancySwitch') {
+          showOccupancySource();
+          showVacationOptions();
+        } else if (key === 'comfortSetting') {
+          $('comfort-box').hidden = !input.checked;
+        } else if (key === 'vacationSwitch') {
+          showVacationOptions();
+        } else if (key === 'memberPresence') {
+          await showMembers();
         } else if (key === 'doorbellCamera') {
           $('camera-box').hidden = !input.checked;
           if (input.checked) {
@@ -413,6 +561,10 @@
         }
       } else if (type === 'select') {
         await setSetting(key, input.value === '' ? undefined : input.value);
+        if (key === 'occupancySource') {
+          showOccupancySource();
+          showVacationOptions();
+        }
       } else {
         await setSetting(key, input.value.trim() === '' ? undefined : input.value.trim());
       }

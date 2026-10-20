@@ -150,6 +150,8 @@ Sign-in: see [Sign-in](#sign-in).
 | `doorbellCamera` | `false` | Adds the doorbell camera (beta). Restart the bridge after changing it. |
 | `motionGrace` | `15` | Seconds the motion sensor stays on after the doorbell's motion ends (6 to 120). |
 | `ffmpegPath` | `/usr/local/bin/ffmpeg` if it exists, else `ffmpeg` | The ffmpeg to use. |
+| `twoWayAudio` | `false` | Talk through the doorbell from the Home app's live view (beta; see [Two-way talk](#two-way-talk-beta)). |
+| `twoWayAudioTest` | `false` | With `twoWayAudio`: plays a 3-second tone on the doorbell when a live view starts (config file only). |
 | `debugRecordings` | `false` | Keeps the last five recordings for troubleshooting (config file only; see [Troubleshooting](#troubleshooting)). |
 
 ### Switches and sensors settings
@@ -157,7 +159,14 @@ Sign-in: see [Sign-in](#sign-in).
 | Setting | Default | |
 |---|---|---|
 | `occupancySwitch` | `false` | Adds a **Home Occupied** switch for your presence automations (see [Home Occupied switch](#home-occupied-switch)). |
+| `occupancySource` | `"home"` | Who sets Home Occupied: `"home"` (your automations), `"autopilot"` or `"ecobee"` (see [Home Occupied source](#home-occupied-source)). |
+| `memberPresence` | `false` | Adds a presence sensor for each household member in `presenceMembers` (see [Member presence sensors](#member-presence-sensors)). |
+| `presenceMembers` | none | The ecobee account ids of the people to add; the settings page lists them. |
 | `vacationSwitch` | `false` | Adds a **Vacation Mode** switch that is on while an ecobee vacation is running (see [Vacation Mode switch](#vacation-mode-switch)). |
+| `vacationWhenEmpty` | `false` | Starts a vacation when Home Occupied has been off for `vacationEmptyHours` (default 24; see [Vacations that follow Home Occupied](#vacations-that-follow-home-occupied)). |
+| `vacationEndOnArrival` | `false` | Ends running vacations when Home Occupied turns on. |
+| `comfortSetting` | `false` | Adds a **Comfort Setting** accessory with a switch per ecobee comfort setting (see [Comfort Setting](#comfort-setting)). |
+| `comfortHoldType` | `"nextTransition"` | How long a comfort setting turned on is held: `"nextTransition"` or `"indefinite"`. |
 | `smokeSensor` | `true` | Adds a separate **Smoke Alarm** accessory (a Smoke Sensor) that detects smoke while ecobee has a smoke-alarm incident open, for automations and Home app smoke notifications. Set to `false` to remove it. |
 | `airQuality` | `true` | For each thermostat with an air quality sensor: an accessory "&lt;thermostat&gt; Air Quality" with an **Air Quality Sensor** (overall level; VOC as ecobee reports it, in ppb, which the Home app labels µg/m³) and a **Carbon Dioxide Sensor** (ppm). Read every 5 minutes. The level follows the ecobee app's Clean–Poor bar: its first two segments are Excellent, then Good, Fair, Inferior, Poor; Unknown while the sensor calibrates. |
 | `co2Alert` | `1000` | CO2 (ppm) at or above which the Carbon Dioxide Sensor reports abnormal levels. |
@@ -231,9 +240,9 @@ Using a robot vacuum as the example:
 
 | Situation | What the security system does |
 |---|---|
-| The robot starts cleaning while the system is armed **Away** | Switches to Home, and goes back to Away when the robot is done. |
+| The robot starts cleaning while the system is armed **Away** | Switches to Home, and goes back to Away when the robot is done, after a 3-second countdown. |
 | The robot starts while the system is set to **Home**, **Night** or **Off** | Nothing changes. |
-| You arm **Away in the Home app** while the robot is cleaning (the tile, a scene, an automation or Siri) | Stays in Home until the robot is done, then arms Away. The tile shows "Arming…" meanwhile. |
+| You arm **Away in the Home app** while the robot is cleaning (the tile, a scene, an automation or Siri) | Stays in Home until the robot is done, then arms Away with the normal exit delay. The tile shows "Arming…" meanwhile. |
 | You want Away **now** | Turn on the **Arm Away Now** switch (see [Hold options](#hold-options)). It arms Away right away and sends the robot home. |
 | You arm **Away in the ecobee app** while the robot is cleaning | Sends the robot home, and gives it up to 2 extra minutes on the countdown. It arms as soon as the robot is docked, but never earlier than your normal countdown. If the robot won't make it in time, it stops where it is before the sensors arm. |
 | You arm **Away at the keypad** while the robot is cleaning | Stops the robot where it is. ecobee doesn't report keypad countdowns, so this happens once Away is already armed: there's a window of up to 10 seconds in which a motion sensor could still catch the robot. |
@@ -313,7 +322,7 @@ camera isn't published and the log says why.
 
 Skip steps 2 to 4 to run the camera without the link: it is then a second tile, a plain camera named
 "&lt;name&gt; Camera", next to ecobee's own doorbell tile, which keeps the ring, motion and recordings. With the
-link the camera replaces ecobee's doorbell. Two-way talk isn't supported yet (see the notes above).
+link the camera replaces ecobee's doorbell.
 
 Notes:
 
@@ -369,6 +378,18 @@ person, animal and package detection, are then made by HomeKit.
 
 To inspect recordings, see [Troubleshooting](#troubleshooting).
 
+### Two-way talk (beta)
+
+Turn on **Two-way talk** (`twoWayAudio`) and restart the bridge to talk through the doorbell from the Home app's
+live view (the microphone button). It is a beta: whether the doorbell accepts audio from the plugin isn't known for
+every firmware, and talking adds a little delay. The log says at start-up what the doorbell answered ("two-way
+talk: the camera answered audio sendrecv" is good; anything else means it can't take audio and the plugin carries
+on receive-only, as before). The live view's picture and sound are not affected.
+
+To check that audio reaches the doorbell, set `"twoWayAudioTest": true` in the config (there is no settings-page
+switch), open the live view while standing at the door, and listen for a 3-second tone; the log says "test tone
+sent". Turn it off afterwards.
+
 ## Home Occupied switch
 
 Apple Home asks you to confirm (a notification you have to tap) whenever a people-arrive or
@@ -404,6 +425,42 @@ What each direction does:
 > or from a shared home member's phone, turns off an Away system, so treat it as as sensitive as the
 > security tile itself.
 
+### Home Occupied source
+
+Who sets the switch is the **Home Occupied source** (`occupancySource`), shown once the switch is on.
+Restart the bridge after changing it.
+
+| Source | `occupancySource` | What decides |
+|---|---|---|
+| **Set via Home App Automations** | `"home"` (default) | You do, with Home app arrive/leave automations, which use Apple's location of each person in your Home. Fastest, and you keep the most control. Nothing to set up in ecobee. |
+| **ecobee Autopilot** | `"autopilot"` | The ecobee app's location on each household member's phone, read every 30 seconds. Location must be set to **Always** in the ecobee app on every phone that counts. Reacts quickly, but doesn't see guests or people without the ecobee app. |
+| **ecobee Smart Home & Away (beta)** | `"ecobee"` | The thermostat, part of ecobee's eco+: it decides from motion on ecobee sensors, plus phones when Autopilot is on. It notices anyone in the house, but can take a long time to decide the home is empty. Paused during an ecobee vacation. Doesn't arm or disarm anything. |
+
+With Autopilot, someone home is any member whose phone is tracked and reads home; nobody home is all of
+those reading away. If some are unknown and none is home, the switch keeps its last state, and so it
+does if no member is tracked or ecobee can't be reached (the log says which). After a restart, Autopilot's first reading only brings the switch up to date, without arming or disarming
+anything; later changes arm and disarm exactly as the switch does. With either ecobee source the switch follows ecobee, so changing it
+in the Home app is undone.
+
+> [!NOTE]
+> If ecobee's own Autopilot is set to arm and disarm by itself in the ecobee app, ecobee and the plugin
+> both act on the same arrivals and departures. Pick one.
+
+## Member presence sensors
+
+Turn on **Enable presence sensors for household members** (`memberPresence`) and tick the people in the
+settings (`presenceMembers`, their ecobee account ids). Each gets an occupancy sensor named after them,
+**Occupied** while the ecobee app's location says they are home, for Home app conditions like "only if
+Alex is home" or "only when nobody else is home". The plugin reads ecobee every 30 seconds and logs
+when someone comes or goes. Restart the bridge after changing the setting.
+
+- The person's phone must report to ecobee with location set to **Always** in the ecobee app. A person
+  for whom that isn't so isn't listed as available in the settings, and gets no sensor until it is.
+- Only household members count. Guests, and people without the ecobee app, aren't seen.
+- **No Response** means unknown: ecobee doesn't know where the phone is, the person is no longer tracked,
+  or ecobee couldn't be reached for a while.
+- Anyone you share your Home with can see these sensors, and so where the people are.
+
 ## Vacation Mode switch
 
 Turn on **Vacation Mode switch** (`vacationSwitch`) and the plugin adds a switch named **Vacation Mode**
@@ -420,6 +477,47 @@ ends.
   it afterwards, the switch shows on again and the log warns.
 - Like the other sensors, the switch shows No Response while ecobee can't be reached or you're
   signed out. Restart the bridge after changing the setting.
+
+### Vacations that follow Home Occupied
+
+Two optional settings in the Vacation Mode section (off by default). They need both the Home Occupied
+and the Vacation Mode switches, and a [Home Occupied source](#home-occupied-source) other than ecobee
+Smart Home & Away, which ecobee pauses during a vacation.
+
+- **Start a vacation when the home has been empty for** (`vacationWhenEmpty`, `vacationEmptyHours`,
+  24 by default, 1 to 720): once Home Occupied has been off that long and no vacation is running, the
+  plugin starts one as the switch does. It does this at most once per empty period, so a vacation you
+  end by hand while still away stays ended. Treat it as a safety net and start vacations deliberately,
+  with the switch or dated in the ecobee app: a wrongly "empty" home (say, a phone without location
+  set to Always under ecobee Autopilot) would start one, which is why the default is long.
+- **End the vacation when someone comes home** (`vacationEndOnArrival`): when Home Occupied turns on,
+  every running ecobee vacation ends, including dated ones from the ecobee app. The reading right
+  after a restart doesn't count.
+
+Visitors while you're away aren't household members, so Home Occupied stays off and the vacation keeps
+running. They disarm with their keypad code and arm Away from the ecobee keypad when they leave. If
+they forget, the Home app's security notification shows the disarm, and you can arm from your phone.
+
+## Comfort Setting
+
+Turn on **Add Comfort Setting switches** (`comfortSetting`) and the plugin adds one accessory,
+**Comfort Setting**, with a switch for each of your ecobee comfort settings (Home, Away, Sleep and your own,
+read from the thermostats' program; with several thermostats, a setting any of them has). It is for
+automations such as "Home Occupied off → Away on".
+
+- Turning a switch **on** holds that comfort setting on the thermostats that have it, and the others
+  turn off. How long: `comfortHoldType`, `"nextTransition"` (default, until the next scheduled change)
+  or `"indefinite"` (until you change it).
+- Turning the active switch **off** goes back to your schedule, so all off means following the schedule.
+- A hold set in the ecobee app or on the thermostat lights the matching switch (read every minute). A
+  temperature-only hold lights none.
+- During an ecobee vacation all switches are off and changes are refused (the log says so).
+- Like the other sensors, the switches show No Response while ecobee can't be reached. Restart the
+  bridge after changing the setting.
+
+> [!NOTE]
+> The Home app shows the switches as one tile, and tapping the tile toggles all of them. Open the tile
+> and pick one, or use **Show as Separate Tiles** in the accessory's settings.
 
 ## Smoke alarm and air quality
 

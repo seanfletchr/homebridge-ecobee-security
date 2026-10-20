@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.9.1
+
+- New setting **Add Comfort Setting switches** (`comfortSetting`, `comfortHoldType`): a Comfort Setting
+  accessory with a switch for each ecobee comfort setting (Home, Away, Sleep and your own). Turning one on
+  holds it, turning it off goes back to the schedule, and holds set in the ecobee app show up too.
+- New setting **Two-way talk (beta)** (`twoWayAudio`, off by default): talk through the doorbell from the Home
+  app's live view. Needs the doorbell to accept audio from the plugin; the log says what it answered. With it
+  on, `twoWayAudioTest` (config only) plays a 3-second tone on the doorbell when a live view starts.
+- New setting **Enable presence sensors for household members** (`memberPresence`, `presenceMembers`):
+  an occupancy sensor per person, Occupied while the ecobee app's location says they are home, for Home
+  app conditions like "only if Alex is home". Needs location set to Always in the ecobee app on that
+  person's phone; shows No Response while unknown.
+- New setting **Home Occupied source** (`occupancySource`): besides your own Home app automations
+  (the default), Home Occupied can follow **ecobee Autopilot**, the ecobee app's location on household
+  members' phones, which arms and disarms like the switch does. ecobee's Smart Home & Away stays as the
+  third choice, now labelled beta.
+- Two new settings with the Vacation Mode switch (off by default; they need the Home Occupied switch and
+  a source other than ecobee Smart Home & Away): **Start a vacation when the home has been empty for**
+  (`vacationWhenEmpty`, `vacationEmptyHours`), a safety net that starts a vacation once, and **End the
+  vacation when someone comes home** (`vacationEndOnArrival`), which also ends dated vacations.
+- When the last hold is released (a robot back on its base, say) and it had switched Away to Home, Away is
+  armed again after a 3-second countdown instead of the full exit delay. The house was already empty, so
+  the delay only left it unarmed longer. Away you asked for during the hold still gets the normal exit delay.
+- Fixed: turning Vacation Mode on in the Home app didn't start a vacation (ecobee rejected the vacation's
+  name).
+
 ## 0.9.0
 
 ### Doorbell camera (beta)

@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 import { HomebridgePluginUiServer, RequestError } from '@homebridge/plugin-ui-utils';
 
+import { memberTracking } from '../lib/ecobee.js';
 import { findDoorbells, pairDoorbell, readPairing, unpairDoorbell } from '../lib/camera/hap-pairing.js';
 import { browserSignInLink, finishBrowserSignIn, finishMfa, passwordSignIn, SignInError } from '../lib/auth.js';
 
@@ -88,6 +89,18 @@ class UiServer extends HomebridgePluginUiServer {
       try {
         const store = JSON.parse(await readFile(join(this.homebridgeStoragePath, 'ecobee-security', 'state.json'), 'utf8'));
         return store.homes ?? [];
+      } catch {
+        return [];
+      }
+    });
+
+    // The household members the plugin last saw (only that list leaves state.json), with whether the
+    // ecobee app can tell where they are. The plugin reads them from ecobee with its own sign-in, so
+    // the page doesn't use the refresh token (a second user of it could invalidate the plugin's).
+    this.onRequest('/members', async () => {
+      try {
+        const store = JSON.parse(await readFile(join(this.homebridgeStoragePath, 'ecobee-security', 'state.json'), 'utf8'));
+        return (store.members ?? []).map(m => ({ accountId: m.accountId, name: m.name, ...memberTracking(m) }));
       } catch {
         return [];
       }

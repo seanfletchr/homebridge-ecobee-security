@@ -106,17 +106,121 @@
         "default": false,
         "description": "Adds a Home Occupied switch to the Home app, with an occupancy sensor. By default your own people-arrive and people-leave automations set it, and it does the rest: off (nobody home) arms Away, on (someone home) turns Away off. Switches don't ask for confirmation the way automations that change the security system do. See \"Home Occupied switch\" in the README."
       },
+      "occupancySource": {
+        "title": "Home Occupied source",
+        "type": "string",
+        "default": "home",
+        "oneOf": [
+          {
+            "title": "Set via Home App Automations",
+            "enum": [
+              "home"
+            ]
+          },
+          {
+            "title": "ecobee Autopilot",
+            "enum": [
+              "autopilot"
+            ]
+          },
+          {
+            "title": "ecobee Smart Home & Away (beta)",
+            "enum": [
+              "ecobee"
+            ]
+          }
+        ],
+        "description": "Who sets Home Occupied. Home App Automations: your arrive/leave automations. ecobee Autopilot: the ecobee app's location on household members' phones, which need location set to Always in the ecobee app. ecobee Smart Home & Away: the thermostat decides from motion on ecobee sensors (plus phones when Autopilot is on); it can be slow to notice an empty home, and it doesn't arm or disarm. See \"Home Occupied source\" in the README.",
+        "condition": {
+          "functionBody": "return model.occupancySwitch === true;"
+        }
+      },
+      "memberPresence": {
+        "title": "Presence sensors for household members",
+        "type": "boolean",
+        "default": false,
+        "description": "Adds an occupancy sensor for each person in presenceMembers, for Home app conditions like \"only if Alex is home\". Anyone you share your Home with can see them. Each person's phone needs location set to Always in the ecobee app. See \"Member presence sensors\" in the README."
+      },
+      "presenceMembers": {
+        "title": "People with a presence sensor",
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "ecobee account ids of the people to add (the settings page lists them). With no list, none.",
+        "condition": {
+          "functionBody": "return model.memberPresence === true;"
+        }
+      },
       "vacationSwitch": {
         "title": "Vacation Mode switch",
         "type": "boolean",
         "default": false,
         "description": "Shows when an ecobee vacation is on, for other accessories to follow. Turn it on to start a vacation now, until you turn it off; set dated vacations in the ecobee app."
       },
+      "vacationWhenEmpty": {
+        "title": "Start a vacation when the home has been empty for",
+        "type": "boolean",
+        "default": false,
+        "description": "A safety net if you forget to turn Vacation Mode on: starts an ecobee vacation once Home Occupied has been off for vacationEmptyHours. Needs the Home Occupied and Vacation Mode switches, and a Home Occupied source other than ecobee Smart Home & Away.",
+        "condition": {
+          "functionBody": "return model.vacationSwitch === true && model.occupancySwitch === true && model.occupancySource !== 'ecobee';"
+        }
+      },
+      "vacationEmptyHours": {
+        "title": "Hours empty before the vacation starts",
+        "type": "integer",
+        "default": 24,
+        "minimum": 1,
+        "maximum": 720,
+        "description": "How long the home has to be empty first.",
+        "condition": {
+          "functionBody": "return model.vacationWhenEmpty === true && model.vacationSwitch === true && model.occupancySwitch === true && model.occupancySource !== 'ecobee';"
+        }
+      },
+      "vacationEndOnArrival": {
+        "title": "End the vacation when someone comes home",
+        "type": "boolean",
+        "default": false,
+        "description": "Ends any running ecobee vacation, including dated ones from the ecobee app, when Home Occupied turns on. Needs the Home Occupied and Vacation Mode switches, and a Home Occupied source other than ecobee Smart Home & Away.",
+        "condition": {
+          "functionBody": "return model.vacationSwitch === true && model.occupancySwitch === true && model.occupancySource !== 'ecobee';"
+        }
+      },
+      "comfortSetting": {
+        "title": "Add Comfort Setting switches",
+        "type": "boolean",
+        "default": false,
+        "description": "One switch per ecobee comfort setting (Home, Away, Sleep and your own). Turning one on holds it; turning it off goes back to your schedule. Restart the bridge after changing this."
+      },
+      "comfortHoldType": {
+        "title": "Comfort setting hold",
+        "type": "string",
+        "default": "nextTransition",
+        "oneOf": [
+          {
+            "title": "Until the next scheduled change",
+            "enum": [
+              "nextTransition"
+            ]
+          },
+          {
+            "title": "Until I change it",
+            "enum": [
+              "indefinite"
+            ]
+          }
+        ],
+        "description": "How long a comfort setting you turn on in the Home app is held.",
+        "condition": {
+          "functionBody": "return model.comfortSetting === true;"
+        }
+      },
       "doorbellCamera": {
         "title": "Doorbell camera",
         "type": "boolean",
         "default": false,
-        "description": "Brings the ecobee doorbell into HomeKit Secure Video: recordings, activity zones and Apple's person and package detection in the Home app, plus live view. With the doorbell link it replaces ecobee's doorbell (instant ring and motion). Two-way talk isn't supported yet. Restart the bridge after changing this. Add it in the Home app with the setup code shown in the Homebridge log. Needs an ffmpeg with libfdk_aac and libx264. See \"Doorbell camera\" in the README."
+        "description": "Brings the ecobee doorbell into HomeKit Secure Video: recordings, activity zones and Apple's person and package detection in the Home app, plus live view. With the doorbell link it replaces ecobee's doorbell (instant ring and motion). Restart the bridge after changing this. Add it in the Home app with the setup code shown in the Homebridge log. Needs an ffmpeg with libfdk_aac and libx264. See \"Doorbell camera\" in the README."
       },
       "motionGrace": {
         "title": "Motion grace period (seconds)",
@@ -127,6 +231,24 @@
         "description": "How long a clip keeps recording after motion stops. Someone back in view within this time stays in the same clip.",
         "condition": {
           "functionBody": "return model.doorbellCamera === true;"
+        }
+      },
+      "twoWayAudio": {
+        "title": "Two-way talk",
+        "type": "boolean",
+        "default": false,
+        "description": "Talk through the doorbell from the Home app's live view.",
+        "condition": {
+          "functionBody": "return model.doorbellCamera === true;"
+        }
+      },
+      "twoWayAudioTest": {
+        "title": "Two-way talk test tone",
+        "type": "boolean",
+        "default": false,
+        "description": "Plays a 3-second tone on the doorbell when live view starts, to check that audio reaches it. Turn it off afterwards.",
+        "condition": {
+          "functionBody": "return model.doorbellCamera === true && model.twoWayAudio === true;"
         }
       },
       "ffmpegPath": {

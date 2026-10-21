@@ -1,6 +1,18 @@
 <style>
   /* Inherit the theme's text colour; Bootstrap's muted grey is unreadable on Homebridge's dark themes. */
-  .hint { opacity: 0.75; font-size: 0.875em; }
+  /* Fade the text colour rather than the element, so links in hints keep the theme's full accent colour. */
+  .hint { color: color-mix(in srgb, currentColor 75%, transparent); font-size: 0.875em; }
+  /* Quick Responses rows: title | wording | Preview | actions; the wording drops under the title in a narrow panel. */
+  #qr-rows { container-type: inline-size; }
+  .qr-row { display: grid; grid-template-columns: 9.5em 1fr auto auto; gap: 0.5rem 0.75rem; align-items: center; padding: 0.5rem 0; border-top: 1px solid rgba(127, 127, 127, 0.25); }
+  .qr-row:last-child { border-bottom: 1px solid rgba(127, 127, 127, 0.25); }
+  .qr-row .btn { text-transform: none; letter-spacing: normal; white-space: nowrap; }
+  .qr-title { overflow-wrap: anywhere; }
+  .qr-actions { display: flex; gap: 0.25rem; justify-content: flex-end; }
+  @container (max-width: 480px) {
+    .qr-row { grid-template-columns: 1fr auto auto; }
+    .qr-phrase { grid-column: 1 / -1; grid-row: 2; }
+  }
 </style>
 
 <div class="card card-body mb-3">
@@ -154,10 +166,39 @@
     </div>
     <div class="form-check form-switch mb-1">
       <input class="form-check-input" type="checkbox" role="switch" id="s-twoWayAudio" data-key="twoWayAudio" data-type="bool" data-default="false">
-      <label class="form-check-label" for="s-twoWayAudio">Two-way talk (beta)</label>
+      <label class="form-check-label" for="s-twoWayAudio">Two-way talk</label>
     </div>
     <p class="hint mb-2">Talk through the doorbell from the Home app's live view. Restart the bridge after changing this.
-      <a href="https://github.com/seanfletchr/homebridge-ecobee-security#two-way-talk-beta" target="_blank" rel="noopener">Learn more…</a></p>
+      <a href="https://github.com/seanfletchr/homebridge-ecobee-security#two-way-talk" target="_blank" rel="noopener">Learn more…</a></p>
+    <div class="form-check form-switch mb-1">
+      <input class="form-check-input" type="checkbox" role="switch" id="s-quickResponses" data-key="quickResponses" data-type="bool" data-default="false">
+      <label class="form-check-label" for="s-quickResponses">Quick Responses</label>
+    </div>
+    <p class="hint mb-2">Short messages the doorbell can play. They appear as one Quick Responses tile in the Home app, with a switch per message, which you can add to the live view's Nearby Accessories. Restart the bridge after changing this.
+      <a href="https://github.com/seanfletchr/homebridge-ecobee-security#quick-responses" target="_blank" rel="noopener">Learn more…</a></p>
+    <div id="qr-box" class="mb-2" hidden>
+      <div class="d-flex align-items-center gap-2 mb-1">
+        <label for="s-quickResponseVolume" class="form-label mb-0">Volume (%)</label>
+        <input class="form-control form-control-sm" style="width:6em" type="number" step="5" min="5" max="100" id="s-quickResponseVolume" data-key="quickResponseVolume" data-type="int" data-default="40">
+      </div>
+      <div class="hint mb-2">How loud messages play at the door.</div>
+      <div id="qr-rows"></div>
+      <p class="hint mb-2" id="qr-removed" hidden></p>
+      <p class="hint mb-2" id="qr-piper-hint" hidden>To change these or add your own, install Piper
+        (<a href="https://github.com/seanfletchr/homebridge-ecobee-security#custom-wording-with-piper" target="_blank" rel="noopener">see README</a>)</p>
+      <button type="button" class="btn btn-secondary btn-sm" id="qr-add" hidden>Add a message</button>
+      <div id="qr-error" class="alert alert-danger mt-2 mb-0" role="alert" hidden></div>
+      <details class="mt-2">
+        <summary>Piper settings</summary>
+        <div class="mt-2">
+          <label for="s-piperPath" class="form-label mb-1">Piper path</label>
+          <input class="form-control mb-2" type="text" id="s-piperPath" data-key="piperPath" data-type="text" data-default="" placeholder="/var/lib/homebridge/piper/bin/piper">
+          <label for="s-piperVoice" class="form-label mb-1">Piper voice</label>
+          <input class="form-control mb-1" type="text" id="s-piperVoice" data-key="piperVoice" data-type="text" data-default="" placeholder="/var/lib/homebridge/piper/en_US-ryan-high.onnx">
+          <div class="hint" id="piper-status"></div>
+        </div>
+      </details>
+    </div>
     <details>
       <summary>Advanced</summary>
       <div class="mt-2">
@@ -423,6 +464,7 @@
     if (block?.doorbellCamera === true) {
       await showLink();
     }
+    await showQuickResponses(block);
   }
 
   /**
@@ -546,6 +588,8 @@
           showVacationOptions();
         } else if (key === 'memberPresence') {
           await showMembers();
+        } else if (key === 'quickResponses') {
+          await showQuickResponses();
         } else if (key === 'doorbellCamera') {
           $('camera-box').hidden = !input.checked;
           if (input.checked) {
@@ -688,6 +732,270 @@
     await homebridge.updatePluginConfig([block, ...blocks.slice(1)]);
     await showKeypad();
   });
+
+  // ── Quick Responses ──
+
+  const NAME_MAX = 14;
+  let qrMessages = [];
+  let qrBuiltIns = new Map();
+
+  function qrError(message) {
+    $('qr-error').textContent = message ?? '';
+    $('qr-error').hidden = !message;
+  }
+
+  /** The messages: the saved list, or the built-ins while none is saved. */
+  async function loadMessages(block) {
+    const defaults = await homebridge.request('/quick-response-defaults').catch(() => []);
+    qrBuiltIns = new Map(defaults.map(m => [m.id, m]));
+    const saved = block?.quickResponseMessages;
+    qrMessages = (Array.isArray(saved) ? saved : defaults).map(m => ({
+      id: String(m.id), name: String(m.name ?? ''), phrase: String(m.phrase ?? ''), enabled: m.enabled !== false,
+    }));
+    // A built-in missing from a saved list is still a built-in: offered under Removed.
+    for (const builtIn of defaults) {
+      if (Array.isArray(saved) && !qrMessages.some(m => m.id === builtIn.id)) {
+        qrMessages.push({ ...builtIn, enabled: false });
+      }
+    }
+  }
+
+  async function showQuickResponses(blockIn) {
+    const block = blockIn ?? (await homebridge.getPluginConfig())[0] ?? {};
+    $('qr-box').hidden = block.quickResponses !== true;
+    if (block.quickResponses !== true) {
+      return;
+    }
+    await loadMessages(block);
+    piperFound = false;
+    renderRows();
+    await showPiperStatus();
+  }
+
+  /** Writes the whole list (built-ins included), so a later change of the built-ins' defaults can't alter what you saved. */
+  async function saveMessages() {
+    await setSetting('quickResponseMessages', qrMessages.map(({ id, name, phrase, enabled }) => ({
+      id, name: name.trim(), phrase: phrase.trim(), ...(qrBuiltIns.has(id) && enabled === false ? { enabled: false } : {}),
+    })));
+  }
+
+  let piperFound = false;
+  const replacing = new Set();   // built-ins being replaced (their title and wording are inputs)
+
+  const same = (message) => {
+    const builtIn = qrBuiltIns.get(message.id);
+    return builtIn && message.name.trim() === builtIn.name && message.phrase.trim() === builtIn.phrase;
+  };
+
+  function renderRows() {
+    const box = $('qr-rows');
+    box.textContent = '';
+    $('qr-add').hidden = !piperFound;
+    $('qr-piper-hint').hidden = piperFound;
+    const removed = qrMessages.filter(m => m.enabled === false);
+    const note = $('qr-removed');
+    note.hidden = !removed.length;
+    note.textContent = '';
+    if (removed.length) {
+      note.append('Removed: ');
+      removed.forEach((message, index) => {
+        if (index) {
+          note.append(' \u00b7 ');
+        }
+        const link = Object.assign(document.createElement('a'), { href: '#', textContent: 'Add back' });
+        link.addEventListener('click', async (event) => {
+          event.preventDefault();
+          message.enabled = true;
+          renderRows();
+          await saveMessages();
+        });
+        note.append(`${message.name} \u00b7 `, link);
+      });
+    }
+    for (const message of qrMessages.filter(m => m.enabled !== false)) {
+      const builtIn = qrBuiltIns.has(message.id);
+      // Built-ins are text unless Piper is there and they are being replaced (or already differ from the shipped wording).
+      const editable = !builtIn || (piperFound && (replacing.has(message.id) || !same(message)));
+      const row = Object.assign(document.createElement('div'), { className: 'qr-row' });
+      const nameWrap = Object.assign(document.createElement('div'), { className: 'qr-title' });
+      const phraseWrap = Object.assign(document.createElement('div'), { className: 'qr-phrase' });
+
+      if (editable) {
+        const name = Object.assign(document.createElement('input'), {
+          type: 'text', className: 'form-control form-control-sm', maxLength: NAME_MAX, value: message.name, placeholder: 'Title',
+        });
+        name.setAttribute('aria-label', 'Title');
+        const counter = Object.assign(document.createElement('div'), { className: 'hint text-end' });
+        counter.style.fontSize = '0.75em';
+        const count = () => {
+          counter.textContent = `${name.value.length}/${NAME_MAX}`;
+        };
+        count();
+        name.addEventListener('input', () => {
+          count();
+          message.name = name.value;
+        });
+        name.addEventListener('change', () => {
+          name.classList.toggle('is-invalid', !name.value.trim());
+          saveMessages();
+        });
+        nameWrap.append(name, counter);
+
+        const phrase = Object.assign(document.createElement('input'), {
+          type: 'text', className: 'form-control form-control-sm', value: message.phrase, placeholder: 'What the doorbell says',
+        });
+        phrase.setAttribute('aria-label', 'What the doorbell says');
+        phrase.addEventListener('input', () => {
+          message.phrase = phrase.value;
+        });
+        phrase.addEventListener('change', () => {
+          phrase.classList.toggle('is-invalid', !phrase.value.trim());
+          saveMessages();
+        });
+        phraseWrap.append(phrase);
+      } else {
+        nameWrap.textContent = message.name;
+        phraseWrap.className += ' hint';
+        phraseWrap.textContent = `\u201c${message.phrase}\u201d`;
+      }
+
+      const preview = Object.assign(document.createElement('button'), { type: 'button', className: 'btn btn-sm btn-outline-secondary', textContent: 'Preview' });
+      preview.addEventListener('click', () => previewMessage(message, preview));
+
+      const slot = Object.assign(document.createElement('div'), { className: 'qr-actions' });
+      const remove = Object.assign(document.createElement('button'), { type: 'button', className: 'btn btn-sm btn-outline-secondary', textContent: '\u00d7' });
+      remove.setAttribute('aria-label', `Remove ${message.name || 'this message'}`);
+      remove.addEventListener('click', async () => {
+        // A built-in is only switched off (its wording stays for "Add back"); your own are deleted.
+        if (builtIn) {
+          message.enabled = false;
+          replacing.delete(message.id);
+        } else {
+          qrMessages = qrMessages.filter(m => m !== message);
+        }
+        renderRows();
+        await saveMessages();
+      });
+      if (builtIn && piperFound) {
+        const replace = editable;
+        const button = Object.assign(document.createElement('button'), {
+          type: 'button', className: 'btn btn-sm btn-outline-secondary', textContent: replace ? 'Restore' : 'Replace',
+        });
+        button.addEventListener('click', async () => {
+          if (replace) {
+            const shipped = qrBuiltIns.get(message.id);
+            message.name = shipped.name;
+            message.phrase = shipped.phrase;
+            replacing.delete(message.id);
+          } else {
+            replacing.add(message.id);
+          }
+          renderRows();
+          await saveMessages();
+        });
+        slot.append(button);
+      }
+      slot.append(remove);
+
+      row.append(nameWrap, phraseWrap, preview, slot);
+      box.append(row);
+    }
+  }
+
+  // Preview plays through the Web Audio API: the settings page's iframe can't play data: URLs in every browser.
+  let audioContext;
+  let playing;   // { source, button }
+
+  function stopPreview() {
+    if (!playing) {
+      return;
+    }
+    const { source, button } = playing;
+    playing = undefined;
+    button.textContent = 'Preview';
+    try {
+      source.stop();
+    } catch {
+      // already stopped
+    }
+  }
+
+  const decode = (context, data) => new Promise((resolve, reject) => {
+    // Older Safari only has the callback form.
+    const promise = context.decodeAudioData(data, resolve, reject);
+    promise?.then?.(resolve, reject);
+  });
+
+  async function previewMessage(message, button) {
+    qrError();
+    const wasPlaying = playing?.button === button;
+    stopPreview();
+    if (wasPlaying) {
+      return;
+    }
+    button.disabled = true;
+    try {
+      // Created and resumed inside the click, before anything is awaited that would end the user gesture.
+      audioContext ??= new (window.AudioContext || window.webkitAudioContext)();
+      const resumed = audioContext.resume();
+      const result = await homebridge.request('/quick-response-preview', {
+        id: message.id, phrase: message.phrase, ...piperFields(),
+      });
+      await resumed;
+      const bytes = Uint8Array.from(atob(result.audio), c => c.charCodeAt(0));
+      const buffer = await decode(audioContext, bytes.buffer);
+      const source = audioContext.createBufferSource();
+      source.buffer = buffer;
+      source.connect(audioContext.destination);
+      const mine = { source, button };
+      source.onended = () => {
+        if (playing === mine) {
+          stopPreview();
+        }
+      };
+      playing = mine;
+      button.textContent = 'Stop';
+      source.start();
+    } catch (error) {
+      qrError(error?.message || String(error) || 'Could not play the preview.');
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  $('qr-add').addEventListener('click', async () => {
+    const bytes = crypto.getRandomValues(new Uint8Array(3));
+    const id = `m-${[...bytes].map(b => b.toString(16).padStart(2, '0')).join('')}`;
+    qrMessages.push({ id, name: '', phrase: '' });
+    renderRows();
+    $('qr-rows').lastElementChild?.querySelector('input')?.focus();
+    await saveMessages();
+  });
+
+  function piperFields() {
+    return { piperPath: $('s-piperPath').value.trim(), piperVoice: $('s-piperVoice').value.trim() };
+  }
+
+  async function showPiperStatus() {
+    const { piperPath, piperVoice } = piperFields();
+    const status = $('piper-status');
+    let found = false;
+    if (!piperPath && !piperVoice) {
+      status.textContent = 'Piper not set up.';
+    } else {
+      const result = await homebridge.request('/piper-status', { piperPath, piperVoice }).catch(() => ({ found: false, reason: 'could not check' }));
+      found = result.found === true;
+      status.textContent = found ? 'Piper found' : `Piper not found (${result.reason})`;
+    }
+    if (found !== piperFound) {
+      piperFound = found;
+      renderRows();
+    }
+  }
+
+  for (const id of ['s-piperPath', 's-piperVoice']) {
+    $(id).addEventListener('change', showPiperStatus);
+  }
 
   // ── Doorbell link ──
 

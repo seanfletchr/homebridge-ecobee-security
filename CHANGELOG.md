@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.0.0
+
+- New setting **Quick Responses** (`quickResponses`, `quickResponseMessages`) in the Doorbell camera card:
+  short messages the doorbell plays on its speaker. They appear as one "Quick Responses" tile in the Home app
+  with a switch per message (open the tile to pick one; tapping the tile itself plays nothing), which you can
+  add to the live view's Nearby Accessories or use from Siri and automations. New setting
+  `quickResponseVolume` (default 40%) sets how loud they play. Three come built in (Leave
+  Delivery, Hang On, Not Home), each with a Preview button in the settings; remove the ones you don't want
+  (and add them back). With Piper installed you can also reword them and add your own.
+  The doorbell needs to accept audio from the plugin, as for two-way talk, but two-way talk doesn't have to be
+  on. If the doorbell connection is down, a message waits up to 20 seconds for it to come back; it doesn't
+  play while another message is playing or someone is talking in a live view, and the log says why.
+- The built-in messages come as recordings made with Piper's ryan voice (RyanSpeech, CC BY-NC-SA 4.0; see
+  `assets/quick-responses/LICENSE`). Changed or new wording needs [Piper](https://github.com/OHF-Voice/piper1-gpl)
+  on the Homebridge machine (`piperPath`, `piperVoice`; see "Custom wording with Piper" in the README).
+- Two-way talk is no longer a beta.
+- New **Doorbell Pressed** occupancy sensor on the video doorbell (with the doorbell link): Detected for 10
+  seconds after each press of any kind, for automations. It shows No Response while the link is down.
+
 ## 0.9.1
 
 - New setting **Add Comfort Setting switches** (`comfortSetting`, `comfortHoldType`): a Comfort Setting

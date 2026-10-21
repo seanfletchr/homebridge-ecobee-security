@@ -251,6 +251,79 @@
           "functionBody": "return model.doorbellCamera === true && model.twoWayAudio === true;"
         }
       },
+      "quickResponses": {
+        "title": "Quick Responses",
+        "type": "boolean",
+        "default": false,
+        "description": "Short messages the doorbell can play. They appear as one Quick Responses tile in the Home app, with a switch per message, which you can add to the live view's Nearby Accessories. Restart the bridge after changing this. See \"Quick Responses\" in the README.",
+        "condition": {
+          "functionBody": "return model.doorbellCamera === true;"
+        }
+      },
+      "quickResponseVolume": {
+        "title": "Quick Response volume (%)",
+        "type": "integer",
+        "default": 40,
+        "minimum": 5,
+        "maximum": 100,
+        "description": "How loud messages play at the door.",
+        "condition": {
+          "functionBody": "return model.doorbellCamera === true && model.quickResponses === true;"
+        }
+      },
+      "quickResponseMessages": {
+        "title": "Quick Response messages",
+        "type": "array",
+        "description": "The messages, each with an id that stays the same (it keeps the switch's identity in the Home app), a name of up to 14 characters, and what is said. With no list, the three built-in messages (Leave Delivery, Hang On, Not Home).",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "title": "Id",
+              "type": "string"
+            },
+            "name": {
+              "title": "Name",
+              "type": "string",
+              "maxLength": 14
+            },
+            "phrase": {
+              "title": "What is said",
+              "type": "string"
+            },
+            "enabled": {
+              "title": "Enabled",
+              "type": "boolean",
+              "default": true,
+              "description": "Only for the built-in messages: false removes the switch from the Home app and keeps the wording."
+            }
+          },
+          "required": [
+            "id",
+            "name",
+            "phrase"
+          ]
+        },
+        "condition": {
+          "functionBody": "return model.doorbellCamera === true && model.quickResponses === true;"
+        }
+      },
+      "piperPath": {
+        "title": "Piper path",
+        "type": "string",
+        "description": "Only for changed or new wording: the piper program you installed (see \"Custom wording with Piper\" in the README).",
+        "condition": {
+          "functionBody": "return model.doorbellCamera === true && model.quickResponses === true;"
+        }
+      },
+      "piperVoice": {
+        "title": "Piper voice",
+        "type": "string",
+        "description": "Path to the voice (.onnx) Piper speaks with.",
+        "condition": {
+          "functionBody": "return model.doorbellCamera === true && model.quickResponses === true;"
+        }
+      },
       "ffmpegPath": {
         "title": "ffmpeg path",
         "type": "string",

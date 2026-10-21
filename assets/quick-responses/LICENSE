@@ -1,0 +1,19 @@
+The audio files in this folder (leave-delivery.wav, hang-on.wav, not-home.wav) are licensed under the
+Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International license (CC BY-NC-SA 4.0).
+
+  https://creativecommons.org/licenses/by-nc-sa/4.0/
+  Legal code: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+
+You may copy and redistribute the recordings and adapt them, for non-commercial purposes only, if you give
+appropriate credit, indicate changes, and share your adaptations under the same license.
+
+Attribution:
+
+  RyanSpeech (CC BY-NC-SA 4.0), synthesized with Piper
+
+The recordings were synthesized with the Piper text-to-speech program (https://github.com/OHF-Voice/piper1-gpl)
+and its "ryan" voice (en_US-ryan-high), which was trained on the RyanSpeech dataset,
+licensed CC BY-NC-SA 4.0.
+
+The rest of this package is licensed under the MIT license (see the LICENSE file in the package root); this
+license applies only to the files in this folder.

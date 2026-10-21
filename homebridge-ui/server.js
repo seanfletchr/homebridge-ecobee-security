@@ -1,7 +1,7 @@
 // Server side of the plugin's settings page (spawned by the Homebridge UI while the settings are
 // open). Does the ecobee sign-in and hands only the refresh token back to the page, which saves it
 // in the plugin config. The MFA token and PKCE verifier stay here, in memory.
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -10,6 +10,7 @@ import { HomebridgePluginUiServer, RequestError } from '@homebridge/plugin-ui-ut
 
 import { memberTracking } from '../lib/ecobee.js';
 import { findDoorbells, pairDoorbell, readPairing, unpairDoorbell } from '../lib/camera/hap-pairing.js';
+import { BUILT_INS, cacheName, piperStatus, renderWithPiper, shippedFile } from '../lib/quick-responses.js';
 import { browserSignInLink, finishBrowserSignIn, finishMfa, passwordSignIn, SignInError } from '../lib/auth.js';
 
 class UiServer extends HomebridgePluginUiServer {
@@ -145,6 +146,52 @@ class UiServer extends HomebridgePluginUiServer {
         throw new RequestError(`The doorbell could not be reached to remove the link (${error.message}).`, { code: 'unreachable' });
       }
     });
+
+    // Quick Responses. Piper's two paths come from the page (they may not be saved yet), else from the saved config.
+    const piperSettings = async ({ piperPath, piperVoice } = {}) => {
+      if (piperPath !== undefined || piperVoice !== undefined) {
+        return { piperPath, piperVoice };
+      }
+      try {
+        const config = JSON.parse(await readFile(join(this.homebridgeStoragePath, 'config.json'), 'utf8'));
+        const block = (config.platforms ?? []).find(p => p.platform === 'EcobeeSecurityPlatform') ?? {};
+        return { piperPath: block.piperPath, piperVoice: block.piperVoice };
+      } catch {
+        return {};
+      }
+    };
+
+    this.onRequest('/piper-status', async (request = {}) => piperStatus(await piperSettings(request)));
+
+    // The audio of one message as base64 WAV: the shipped recording while the built-in wording is unchanged,
+    // else rendered with Piper (the rendering goes in the plugin's cache, where the bridge will find it too).
+    this.onRequest('/quick-response-preview', async ({ id, phrase, piperPath, piperVoice } = {}) => {
+      const message = { id: String(id ?? ''), phrase: String(phrase ?? '').trim() };
+      if (!message.phrase) {
+        throw new RequestError('Type what the doorbell should say first.');
+      }
+      let file = shippedFile(message);
+      if (!file) {
+        const settings = await piperSettings({ piperPath, piperVoice });
+        if (!piperStatus(settings).found) {
+          throw new RequestError('Changed wording needs Piper (see README)', { code: 'no_piper' });
+        }
+        const dir = join(this.homebridgeStoragePath, 'ecobee-security', 'quick-responses');
+        mkdirSync(dir, { recursive: true });
+        file = join(dir, cacheName(String(settings.piperVoice).trim(), message.phrase));
+        try {
+          if (!existsSync(file)) {
+            await renderWithPiper({ ...settings, phrase: message.phrase, out: file });
+          }
+        } catch (error) {
+          throw new RequestError(`Piper could not render this: ${error.message}`, { code: 'piper_failed' });
+        }
+      }
+      return { audio: (await readFile(file)).toString('base64'), mime: 'audio/wav' };
+    });
+
+    // The built-in messages, for a settings page with none saved yet.
+    this.onRequest('/quick-response-defaults', () => BUILT_INS);
 
     this.ready();
   }

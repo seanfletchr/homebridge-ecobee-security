@@ -38,6 +38,7 @@ GraphQL at `federated-api.prod.federated-graph.generacapis.com`), which ecobee c
 - **Vacation Mode** switch that follows, and starts, an ecobee vacation.
 - **Security holds** let other plugins, like a robot vacuum, keep the system from arming Away while they work.
 - **Doorbell camera** with HomeKit Secure Video, live view and snapshots; with the **doorbell link**, instant ring and motion, the sensors the doorbell bridges to HomeKit, and its Chime, Status Light and Night Vision switches.
+- **Quick Responses**: short messages the doorbell plays on its speaker ("Leave Delivery", "Hang On", "Not Home"), one Quick Responses tile in the Home app, plus a **Doorbell Pressed** sensor for automations.
 
 ## Contents
 
@@ -49,6 +50,7 @@ GraphQL at `federated-api.prod.federated-graph.generacapis.com`), which ecobee c
 - [Keypad unlock](#keypad-unlock)
 - [Security holds](#security-holds)
 - [Doorbell camera](#doorbell-camera)
+- [Quick Responses](#quick-responses)
 - [Home Occupied switch](#home-occupied-switch)
 - [Vacation Mode switch](#vacation-mode-switch)
 - [Smoke alarm and air quality](#smoke-alarm-and-air-quality)
@@ -150,8 +152,12 @@ Sign-in: see [Sign-in](#sign-in).
 | `doorbellCamera` | `false` | Adds the doorbell camera (beta). Restart the bridge after changing it. |
 | `motionGrace` | `15` | Seconds the motion sensor stays on after the doorbell's motion ends (6 to 120). |
 | `ffmpegPath` | `/usr/local/bin/ffmpeg` if it exists, else `ffmpeg` | The ffmpeg to use. |
-| `twoWayAudio` | `false` | Talk through the doorbell from the Home app's live view (beta; see [Two-way talk](#two-way-talk-beta)). |
+| `twoWayAudio` | `false` | Talk through the doorbell from the Home app's live view (see [Two-way talk](#two-way-talk)). |
 | `twoWayAudioTest` | `false` | With `twoWayAudio`: plays a 3-second tone on the doorbell when a live view starts (config file only). |
+| `quickResponses` | `false` | Adds a switch per message that plays it on the doorbell (see [Quick Responses](#quick-responses)). Restart the bridge after changing it. |
+| `quickResponseVolume` | `40` | How loud messages play at the door, in percent (5 to 100). Doesn't change two-way talk. |
+| `quickResponseMessages` | the three built-ins | The messages: a list of `{ "id", "name", "phrase" }`; a built-in with `"enabled": false` is removed but keeps its wording. `id` never changes (it is the switch's identity in the Home app), `name` is the tile name (14 characters at most), `phrase` is what is said. |
+| `piperPath`, `piperVoice` | none | Piper and its voice, only for changed or new wording (see [Custom wording with Piper](#custom-wording-with-piper)). |
 | `debugRecordings` | `false` | Keeps the last five recordings for troubleshooting (config file only; see [Troubleshooting](#troubleshooting)). |
 
 ### Switches and sensors settings
@@ -348,13 +354,21 @@ the Home app. You get:
   occupancy and battery state;
 - the doorbell's own switches: **Chime Doorbell**, **Camera Status Light** and **Night Vision Light**.
   Changes in the Home app are sent to the doorbell, and changes made at the doorbell show up in the Home
-  app. While the link is down, setting one fails.
+  app. While the link is down, setting one fails;
+- a **Doorbell Pressed** sensor (see below).
 
 The pairing is kept in `ecobee-security/doorbell-pairing.json` in the Homebridge folder. **Unlink** in the
 settings removes it from the doorbell as well (restart the bridge afterwards). If the link drops, the
 plugin looks for the doorbell again and reconnects by itself; the ring, motion, switches and bridged
 sensors show **No Response** while it has been down for a minute. The video still comes from the
 cloud session (the doorbell's own stream isn't used).
+
+### Doorbell Pressed sensor
+
+With the doorbell link, the video doorbell also has an occupancy sensor named **Doorbell Pressed**. Each press
+(single, double or long) sets it to Detected for 10 seconds; another press starts the 10 seconds again.
+The Home app can't start an automation from a video doorbell's ring, but it can from a sensor. It shows No
+Response while the doorbell link is down.
 
 ### HomeKit Secure Video
 
@@ -378,17 +392,62 @@ person, animal and package detection, are then made by HomeKit.
 
 To inspect recordings, see [Troubleshooting](#troubleshooting).
 
-### Two-way talk (beta)
+### Two-way talk
 
 Turn on **Two-way talk** (`twoWayAudio`) and restart the bridge to talk through the doorbell from the Home app's
-live view (the microphone button). It is a beta: whether the doorbell accepts audio from the plugin isn't known for
-every firmware, and talking adds a little delay. The log says at start-up what the doorbell answered ("two-way
+live view (the microphone button). Whether the doorbell accepts audio from the plugin can depend on its firmware, and talking adds a little delay. The log says at start-up what the doorbell answered ("two-way
 talk: the camera answered audio sendrecv" is good; anything else means it can't take audio and the plugin carries
 on receive-only, as before). The live view's picture and sound are not affected.
 
 To check that audio reaches the doorbell, set `"twoWayAudioTest": true` in the config (there is no settings-page
 switch), open the live view while standing at the door, and listen for a 3-second tone; the log says "test tone
 sent". Turn it off afterwards.
+
+## Quick Responses
+
+Quick Responses are short messages the doorbell plays on its speaker, for the person at your door: "You can just leave it", "We'll be right there". Turn on **Quick Responses** (`quickResponses`, in the **Doorbell camera** card, which needs the doorbell camera) and restart the bridge. It needs the doorbell to accept audio from the plugin, the same as [Two-way talk](#two-way-talk) (the log says what it answered), but **Two-way talk** itself doesn't have to be on.
+
+There are three built-in messages:
+
+| Tile | Says |
+|---|---|
+| Leave Delivery | "Hi there. You can just leave it. Thanks!" |
+| Hang On | "Just a sec, we'll be right there." |
+| Not Home | "Hi there, no one can answer the door right now, but we'll be notified that you stopped by." |
+
+The messages appear in the Home app as **one tile, "Quick Responses"**, which holds a switch per message. Tapping the tile itself turns all of them on at once, which the plugin recognises and ignores (it plays nothing and the switches turn back off; the log says so). **Open the tile** (long-press, or tap its settings) and pick one message instead. If you prefer a tile per message, turn on **Show as Separate Tiles** in the accessory's settings in the Home app. In the doorbell's live view, the group appears as one tile in **Nearby Accessories**: add it there and tap the message you want. Turning a message's switch on plays it and it turns itself off when the message ends. Siri works too ("Hey Siri, turn on Not Home"), and so do automations and scenes. Messages play at the volume you set (`quickResponseVolume`, 40% by default).
+
+In the settings, each message is a row: the **title** (the tile name, 14 characters at most), **what is said**, and **Preview**, which plays it in your browser. Without Piper, the three built-in messages are fixed: the rows show their title and wording as text, and you can preview them. Once [Piper](#custom-wording-with-piper) is installed, each built-in row has **Replace** (edit its title and wording; **Restore** goes back to the shipped wording and audio) and **Add a message** adds your own, with a remove button. The built-in messages can be removed (×) and added back from the line under the rows, with or without Piper; a removed message's switch leaves the Home app after a bridge restart, and returns with the same identity when added back. Changing a title or the wording takes effect after a bridge restart.
+
+An example automation: when someone rings and nobody is home, tell them so.
+
+1. **Trigger:** An Accessory is Controlled > **Doorbell Pressed** detects occupancy ([Doorbell Pressed sensor](#doorbell-pressed-sensor)).
+2. **Condition:** only if **Home Occupied** is off ([Home Occupied switch](#home-occupied-switch)).
+3. **Action:** turn on **Not Home**.
+
+How it works: the message is played into the plugin's session with the doorbell, so it can't play while the session is down, while the camera hasn't accepted audio from us, while another message is playing, or while someone is talking in a live view (the microphone has priority; a message that is playing stops when someone starts talking). The switch then turns itself back off after a second, and the log says why. One message plays at a time. The log line "Quick Response "&lt;name&gt;" played" shows how many audio packets were sent. Each switch's identity comes from the message's `id`, not its title or wording, so you can rename a message without breaking the automations that use it. Messages you remove from the settings disappear from the Home app after a restart.
+
+### Custom wording with Piper
+
+The three built-in messages come as recordings with the plugin. Anything else, meaning reworded built-ins and your own messages, is turned into speech on your Homebridge machine with [Piper](https://github.com/OHF-Voice/piper1-gpl), a local text-to-speech program that doesn't send your text anywhere. That is optional: without Piper the built-ins work as they are, and a message that needs it is left out, with a warning in the log.
+
+1. Install Piper into a folder the Homebridge user can read, for example a Python virtual environment:
+
+   ```sh
+   sudo -u homebridge python3 -m venv /var/lib/homebridge/piper
+   sudo -u homebridge /var/lib/homebridge/piper/bin/pip install piper-tts
+   ```
+
+2. Download a voice: an `.onnx` file and its `.onnx.json` file, side by side, from [rhasspy/piper-voices on Hugging Face](https://huggingface.co/rhasspy/piper-voices). The built-in messages use the English (US) **ryan**, **high** quality voice, which is a good place to start.
+3. In the settings, under **Piper settings** in the Quick Responses box, fill in **Piper path** (the `piper` program, for example `/var/lib/homebridge/piper/bin/piper`) and **Piper voice** (the `.onnx` file). The page says whether Piper was found. **Preview** then plays your wording.
+
+The plugin makes the audio for your messages when the bridge starts (one at a time, in the background) and keeps it in `ecobee-security/quick-responses` in the Homebridge folder, and removes it when no message uses it any more. A message shows up in the Home app once its audio is ready. All messages are spoken with the same speed and voice settings as the built-ins.
+
+Tips: a bare "Hi!" can come out as "Aye". Writing "Hi there" usually helps, or give Piper the exact sounds: text between `[[` and `]]` is read as phonemes, for example `[[ hˈaɪ ðɛɹ ]]`. Phonemes are passed through unchanged.
+
+### Voice licensing
+
+The recordings of the built-in messages (in `assets/quick-responses`) were made with Piper's **ryan** voice, whose training data (RyanSpeech) is licensed **CC BY-NC-SA 4.0**. The recordings are therefore licensed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) too: free for non-commercial use, with attribution: "RyanSpeech (CC BY-NC-SA 4.0), synthesized with Piper". The rest of the plugin stays MIT licensed. A voice you use for your own wording has its own license; check it before sharing recordings made with it.
 
 ## Home Occupied switch
 

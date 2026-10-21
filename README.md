@@ -54,6 +54,7 @@ GraphQL at `federated-api.prod.federated-graph.generacapis.com`), which ecobee c
 - [Home Occupied switch](#home-occupied-switch)
 - [Vacation Mode switch](#vacation-mode-switch)
 - [Smoke alarm and air quality](#smoke-alarm-and-air-quality)
+- [Automation ideas](#automation-ideas)
 - [Troubleshooting](#troubleshooting)
 - [API notes](#api-notes)
 - [License](#license)
@@ -171,7 +172,7 @@ Sign-in: see [Sign-in](#sign-in).
 | `vacationSwitch` | `false` | Adds a **Vacation Mode** switch that is on while an ecobee vacation is running (see [Vacation Mode switch](#vacation-mode-switch)). |
 | `vacationWhenEmpty` | `false` | Starts a vacation when Home Occupied has been off for `vacationEmptyHours` (default 24; see [Vacations that follow Home Occupied](#vacations-that-follow-home-occupied)). |
 | `vacationEndOnArrival` | `false` | Ends running vacations when Home Occupied turns on. |
-| `comfortSetting` | `false` | Adds a **Comfort Setting** accessory with a switch per ecobee comfort setting (see [Comfort Setting](#comfort-setting)). |
+| `comfortSetting` | `false` | Adds a **Comfort Setting** accessory, a TV-style tile with an input per ecobee comfort setting (see [Comfort Setting](#comfort-setting)). |
 | `comfortHoldType` | `"nextTransition"` | How long a comfort setting turned on is held: `"nextTransition"` or `"indefinite"`. |
 | `smokeSensor` | `true` | Adds a separate **Smoke Alarm** accessory (a Smoke Sensor) that detects smoke while ecobee has a smoke-alarm incident open, for automations and Home app smoke notifications. Set to `false` to remove it. |
 | `airQuality` | `true` | For each thermostat with an air quality sensor: an accessory "&lt;thermostat&gt; Air Quality" with an **Air Quality Sensor** (overall level; VOC as ecobee reports it, in ppb, which the Home app labels µg/m³) and a **Carbon Dioxide Sensor** (ppm). Read every 5 minutes. The level follows the ecobee app's Clean–Poor bar: its first two segments are Excellent, then Good, Fair, Inferior, Poor; Unknown while the sensor calibrates. |
@@ -559,29 +560,47 @@ they forget, the Home app's security notification shows the disarm, and you can 
 
 ## Comfort Setting
 
-Turn on **Add Comfort Setting switches** (`comfortSetting`) and the plugin adds one accessory,
-**Comfort Setting**, with a switch for each of your ecobee comfort settings (Home, Away, Sleep and your own,
-read from the thermostats' program; with several thermostats, a setting any of them has). It is for
-automations such as "Home Occupied off → Away on".
+Turn on **Add Comfort Setting** (`comfortSetting`) and the plugin adds one accessory, **Comfort Setting**: a
+single tile in the Home app (a HomeKit television) with an input for each of your ecobee comfort settings
+(Home, Away, Sleep and your own, read from the thermostats' program; with several thermostats, a setting
+any of them has).
 
-- Turning a switch **on** holds that comfort setting on the thermostats that have it, and the others
-  turn off. How long: `comfortHoldType`, `"nextTransition"` (default, until the next scheduled change)
-  or `"indefinite"` (until you change it).
-- Turning the active switch **off** goes back to your schedule, so all off means following the schedule.
-- A hold set in the ecobee app or on the thermostat lights the matching switch (read every minute). A
-  temperature-only hold lights none.
-- During an ecobee vacation all switches are off and changes are refused (the log says so).
-- Like the other sensors, the switches show No Response while ecobee can't be reached. Restart the
-  bridge after changing the setting.
-
-> [!NOTE]
-> The Home app shows the switches as one tile, and tapping the tile toggles all of them. Open the tile
-> and pick one, or use **Show as Separate Tiles** in the accessory's settings.
+- Picking a setting **holds** it on the thermostats that have it. How long: `comfortHoldType`,
+  `"nextTransition"` (default, until the next scheduled change) or `"indefinite"` (until you change it).
+- Switching the tile **off** goes back to your schedule. The tile is on while a comfort hold runs; while
+  the thermostats follow their schedule it is off and shows the setting the schedule is on now.
+  Switching it on holds the setting it shows.
+- A hold set in the ecobee app or on the thermostat shows on the tile (read every minute). A
+  temperature-only hold counts as following the schedule.
+- During an ecobee vacation the tile is off and changes are refused (the log says so).
+- Like the other sensors, the tile shows No Response while ecobee can't be reached.
+- HomeKit allows one television per bridge, so the tile is its own accessory: add it to the Home app
+  with the bridge's setup code (the log says so when it is published, once ecobee has been read).
+  Restart the bridge after changing the setting.
+- Home app scenes and automations can pick a comfort setting: add the tile and choose the setting
+  as its input.
+- The Home app can't start an automation when the comfort setting changes (TV tiles aren't offered as
+  triggers).
+- The tile appears with a streaming-device icon. In the Home app's
+  input list you can hide settings you don't use (remembered); the order follows the ecobee app.
+- It replaces the one-switch-per-setting accessory of earlier versions, which is removed from the Home
+  app at the next restart; automations built on those switches have to be rebuilt with the tile.
 
 ## Smoke alarm and air quality
 
 - **Smoke Alarm** (`smokeSensor`, on by default) is its own accessory, a Smoke Sensor that detects smoke while ecobee has a smoke-alarm incident open. It is separate from the security tile (the Home app would otherwise merge it into the tile with a cloud icon).
 - **Air quality** (`airQuality`, on by default) adds, for each thermostat with an air quality sensor (ecobee Premium), an Air Quality Sensor and a Carbon Dioxide Sensor, read every 5 minutes; `co2Alert` sets the CO2 level (ppm) that reports abnormal levels. Details are in the settings table above. Temperature and humidity come from ecobee's own HomeKit integration.
+
+## Automation ideas
+
+A few Home app automations built on this plugin's accessories:
+
+| When | Do |
+|---|---|
+| **Vacation Mode** turns on | Close the blinds |
+| **Doorbell** rings | Pause the Apple TV |
+| 6:00 AM every day, if someone is home | Set the **security system** to Off |
+| **Doorbell** detects motion, after sunset | Turn on the porch and entryway lights |
 
 ## Troubleshooting
 

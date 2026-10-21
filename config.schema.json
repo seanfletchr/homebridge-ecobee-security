@@ -188,10 +188,10 @@
         }
       },
       "comfortSetting": {
-        "title": "Add Comfort Setting switches",
+        "title": "Add Comfort Setting",
         "type": "boolean",
         "default": false,
-        "description": "One switch per ecobee comfort setting (Home, Away, Sleep and your own). Turning one on holds it; turning it off goes back to your schedule. Restart the bridge after changing this."
+        "description": "One tile in the Home app with a picker for your ecobee comfort settings (Home, Away, Sleep and your own). Picking one holds it; switching the tile off goes back to your schedule. It is added to the Home app on its own with the bridge's setup code. Restart the bridge after changing this."
       },
       "comfortHoldType": {
         "title": "Comfort setting hold",

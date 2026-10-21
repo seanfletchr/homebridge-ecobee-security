@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.1
+
+- **Comfort Setting** is now one TV-style tile with an input per comfort setting, instead of a switch per
+  setting. Picking an input holds that setting, switching the tile off goes back to your schedule, and the
+  tile shows the scheduled setting while off. It is its own HomeKit accessory, added to the Home app with
+  the bridge's setup code, with a streaming-device icon; settings can be hidden in the Home app's input list
+  (remembered) and follow ecobee's order. Breaking: the old switches are removed, so automations built on them need
+  rebuilding with the tile (Home app scenes can set the input).
+- README: new Automation ideas section, and updated header and devices images.
+
 ## 1.0.0
 
 - New setting **Quick Responses** (`quickResponses`, `quickResponseMessages`) in the Doorbell camera card:
